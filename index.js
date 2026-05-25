@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const axios = require("axios");
 
@@ -23,20 +25,6 @@ const OPENROUTER_API_KEY =
 process.env.OPENROUTER_API_KEY;
 
 // ======================================
-// CHECK TOKENS
-// ======================================
-
-if (!BOT_TOKEN) {
-  console.log("❌ BOT_TOKEN Missing");
-}
-
-if (!OPENROUTER_API_KEY) {
-  console.log(
-    "❌ OPENROUTER_API_KEY Missing"
-  );
-}
-
-// ======================================
 // TELEGRAM API
 // ======================================
 
@@ -44,11 +32,10 @@ const TELEGRAM_API =
 `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 // ======================================
-// MEMORY
+// MEMORY + WARNINGS
 // ======================================
 
 const memory = {};
-
 const warnings = {};
 
 // ======================================
@@ -74,15 +61,15 @@ You are 🎸☠︎༒ ✧𝕾𝖚𝖕𝖗𝖊𝖒𝖊✧ ༒☠︎🎸
 Developer: Easy Deplover
 
 Behavior:
-- Professional Telegram group assistant
-- Smart human-like replies
+- Professional Telegram assistant
+- Human-like replies
 - Hindi + English mix
-- Friendly and respectful
-- Help group members
+- Friendly behavior
+- Respect everyone
 - Keep replies short
-- Detect abusive language
-- Never reveal secrets
 - Use emojis sometimes
+- Never reveal secrets
+- Smart conversation
 `;
 
 // ======================================
@@ -110,7 +97,7 @@ async function sendMessage(
   } catch (err) {
 
     console.log(
-      "❌ Send Message Error:",
+      "❌ Send Error:",
       err.response?.data || err.message
     );
 
@@ -136,14 +123,8 @@ async function deleteMessage(
       }
     );
 
-  } catch (err) {
+  } catch (err) {}
 
-    console.log(
-      "❌ Delete Error:",
-      err.response?.data || err.message
-    );
-
-  }
 }
 
 // ======================================
@@ -181,7 +162,6 @@ async function banUser(
 
 async function askAI(
   userId,
-  username,
   message
 ) {
 
@@ -219,7 +199,7 @@ async function askAI(
 
       {
         model:
-"deepseek/deepseek-v4-flash:free",
+"deepseek/deepseek-chat-v3-0324:free",
 
         messages
       },
@@ -237,7 +217,7 @@ async function askAI(
 "https://bot-run-np12.onrender.com",
 
           "X-Title":
-"Supreme Telegram Bot"
+"Supreme Bot"
 
         }
       }
@@ -276,17 +256,9 @@ app.post(
 "/webhook",
 async (req, res) => {
 
-  console.log(
-    JSON.stringify(req.body, null, 2)
-  );
-
   try {
 
     const update = req.body;
-
-    // ==================================
-    // CHECK MESSAGE
-    // ==================================
 
     if (!update.message) {
       return res.sendStatus(200);
@@ -309,10 +281,27 @@ async (req, res) => {
 
         await sendMessage(
           chatId,
-`👋 Welcome <b>${user.first_name}</b> to the group!`
+`👋 Welcome <b>${user.first_name}</b> to the group 🔥`
         );
 
       }
+
+      return res.sendStatus(200);
+    }
+
+    // ==================================
+    // USER LEFT
+    // ==================================
+
+    if (msg.left_chat_member) {
+
+      const user =
+msg.left_chat_member;
+
+      await sendMessage(
+        chatId,
+`😢 <b>${user.first_name}</b> left the group.`
+      );
 
       return res.sendStatus(200);
     }
@@ -365,6 +354,7 @@ lower.includes(word)
       const remaining =
 3 - warnings[userId];
 
+      // Delete bad message
       await deleteMessage(
         chatId,
         msg.message_id
@@ -380,7 +370,7 @@ lower.includes(word)
 
         await sendMessage(
           chatId,
-`🚫 <b>${username}</b> banned for abusive messages.`
+`🚫 <b>${username}</b> banned for abusive language.`
         );
 
         return res.sendStatus(200);
@@ -407,14 +397,8 @@ ${remaining}`
     const aiReply =
 await askAI(
   userId,
-  username,
   text
 );
-
-    console.log(
-      "🤖 AI Reply:",
-      aiReply
-    );
 
     await sendMessage(
       chatId,
