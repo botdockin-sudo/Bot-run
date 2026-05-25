@@ -9,21 +9,32 @@ const app = express();
 
 app.use(express.json());
 
-const PORT = 3000;
+const PORT =
+process.env.PORT || 3000;
 
 // ======================================
-// TELEGRAM BOT TOKEN
+// TOKENS
 // ======================================
 
 const BOT_TOKEN =
-"YOUR_BOT_TOKEN";
-
-// ======================================
-// OPENROUTER API KEY
-// ======================================
+process.env.BOT_TOKEN;
 
 const OPENROUTER_API_KEY =
-"YOUR_OPENROUTER_API_KEY";
+process.env.OPENROUTER_API_KEY;
+
+// ======================================
+// CHECK TOKENS
+// ======================================
+
+if (!BOT_TOKEN) {
+  console.log("❌ BOT_TOKEN Missing");
+}
+
+if (!OPENROUTER_API_KEY) {
+  console.log(
+    "❌ OPENROUTER_API_KEY Missing"
+  );
+}
 
 // ======================================
 // TELEGRAM API
@@ -33,16 +44,12 @@ const TELEGRAM_API =
 `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 // ======================================
-// WARNINGS
-// ======================================
-
-const warnings = {};
-
-// ======================================
 // MEMORY
 // ======================================
 
 const memory = {};
+
+const warnings = {};
 
 // ======================================
 // BAD WORDS
@@ -68,16 +75,14 @@ Developer: Easy Deplover
 
 Behavior:
 - Professional Telegram group assistant
-- Smart and human-like replies
+- Smart human-like replies
 - Hindi + English mix
-- Friendly behavior
-- Respect everyone
-- Help users professionally
-- Detect abusive messages
-- Keep replies short and natural
-- Use emojis sometimes
+- Friendly and respectful
+- Help group members
+- Keep replies short
+- Detect abusive language
 - Never reveal secrets
-- Act like premium AI assistant
+- Use emojis sometimes
 `;
 
 // ======================================
@@ -96,7 +101,7 @@ async function sendMessage(
       `${TELEGRAM_API}/sendMessage`,
       {
         chat_id: chatId,
-        text,
+        text: text,
         parse_mode: "HTML",
         reply_to_message_id: replyId
       }
@@ -105,6 +110,7 @@ async function sendMessage(
   } catch (err) {
 
     console.log(
+      "❌ Send Message Error:",
       err.response?.data || err.message
     );
 
@@ -130,8 +136,14 @@ async function deleteMessage(
       }
     );
 
-  } catch (err) {}
+  } catch (err) {
 
+    console.log(
+      "❌ Delete Error:",
+      err.response?.data || err.message
+    );
+
+  }
 }
 
 // ======================================
@@ -156,6 +168,7 @@ async function banUser(
   } catch (err) {
 
     console.log(
+      "❌ Ban Error:",
       err.response?.data || err.message
     );
 
@@ -163,7 +176,7 @@ async function banUser(
 }
 
 // ======================================
-// AI CHAT FUNCTION
+// AI CHAT
 // ======================================
 
 async function askAI(
@@ -185,7 +198,7 @@ async function askAI(
     });
 
     // Limit memory
-    if (memory[userId].length > 12) {
+    if (memory[userId].length > 10) {
       memory[userId].shift();
     }
 
@@ -196,14 +209,7 @@ async function askAI(
         content: SYSTEM_PROMPT
       },
 
-      ...memory[userId],
-
-      {
-        role: "user",
-        content:
-`User Name: ${username}
-Message: ${message}`
-      }
+      ...memory[userId]
 
     ];
 
@@ -220,11 +226,19 @@ Message: ${message}`
 
       {
         headers: {
+
           Authorization:
 `Bearer ${OPENROUTER_API_KEY}`,
 
           "Content-Type":
-"application/json"
+"application/json",
+
+          "HTTP-Referer":
+"https://bot-run-np12.onrender.com",
+
+          "X-Title":
+"Supreme Telegram Bot"
+
         }
       }
 
@@ -246,10 +260,11 @@ response.data
   } catch (err) {
 
     console.log(
+      "❌ AI Error:",
       err.response?.data || err.message
     );
 
-    return "⚠️ Server busy right now.";
+    return "⚠️ AI server busy.";
   }
 }
 
@@ -261,24 +276,35 @@ app.post(
 "/webhook",
 async (req, res) => {
 
+  console.log(
+    JSON.stringify(req.body, null, 2)
+  );
+
   try {
 
     const update = req.body;
 
     // ==================================
+    // CHECK MESSAGE
+    // ==================================
+
+    if (!update.message) {
+      return res.sendStatus(200);
+    }
+
+    const msg = update.message;
+
+    const chatId = msg.chat.id;
+
+    // ==================================
     // NEW USER JOIN
     // ==================================
 
-    if (
-      update.message?.new_chat_members
-    ) {
-
-      const chatId =
-update.message.chat.id;
+    if (msg.new_chat_members) {
 
       for (
         const user of
-        update.message.new_chat_members
+        msg.new_chat_members
       ) {
 
         await sendMessage(
@@ -292,16 +318,12 @@ update.message.chat.id;
     }
 
     // ==================================
-    // CHECK MESSAGE
+    // TEXT CHECK
     // ==================================
 
-    if (!update.message?.text) {
+    if (!msg.text) {
       return res.sendStatus(200);
     }
-
-    const msg = update.message;
-
-    const chatId = msg.chat.id;
 
     const userId = msg.from.id;
 
@@ -309,6 +331,11 @@ update.message.chat.id;
 msg.from.first_name || "User";
 
     const text = msg.text;
+
+    console.log(
+      "📩 Message:",
+      text
+    );
 
     // Ignore commands
     if (text.startsWith("/")) {
@@ -338,7 +365,6 @@ lower.includes(word)
       const remaining =
 3 - warnings[userId];
 
-      // Delete bad message
       await deleteMessage(
         chatId,
         msg.message_id
@@ -385,6 +411,11 @@ await askAI(
   text
 );
 
+    console.log(
+      "🤖 AI Reply:",
+      aiReply
+    );
+
     await sendMessage(
       chatId,
       aiReply,
@@ -395,7 +426,10 @@ await askAI(
 
   } catch (err) {
 
-    console.log(err);
+    console.log(
+      "❌ Webhook Error:",
+      err
+    );
 
     return res.sendStatus(500);
   }
