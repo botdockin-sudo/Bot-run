@@ -44,6 +44,22 @@ const badWords = [
 ];
 
 // ======================================
+// AI MODELS
+// ======================================
+
+const models = [
+
+  "google/gemma-3-27b-it:free",
+
+  "deepseek/deepseek-chat-v3-0324:free",
+
+  "meta-llama/llama-3.1-8b-instruct:free",
+
+  "mistralai/mistral-7b-instruct:free"
+
+];
+
+// ======================================
 // SYSTEM PROMPT
 // ======================================
 
@@ -52,7 +68,7 @@ You are 🎸☠︎༒ ✧𝕾𝖚𝖕𝖗𝖊𝖒𝖊✧ ༒☠︎🎸
 
 Developer: Easy Deplover
 
-Behavior:
+Rules:
 - Professional Telegram assistant
 - Human-like replies
 - Hindi + English mix
@@ -62,6 +78,7 @@ Behavior:
 - Respect everyone
 - Use emojis naturally
 - Never reveal secrets
+- Do not use abusive language
 `;
 
 // ======================================
@@ -180,59 +197,90 @@ async function askAI(
       memory[userId].shift();
     }
 
-    const response = await axios.post(
-
-      "https://openrouter.ai/api/v1/chat/completions",
+    const messages = [
 
       {
-        model:
-"meta-llama/llama-3.1-8b-instruct:free",
-
-        messages: [
-
-          {
-            role: "system",
-            content: SYSTEM_PROMPT
-          },
-
-          ...memory[userId]
-
-        ]
-
+        role: "system",
+        content: SYSTEM_PROMPT
       },
 
-      {
-        headers: {
+      ...memory[userId]
 
-          Authorization:
+    ];
+
+    // ==================================
+    // MULTI MODEL FALLBACK
+    // ==================================
+
+    for (const model of models) {
+
+      try {
+
+        console.log(
+          `🤖 Trying: ${model}`
+        );
+
+        const response =
+        await axios.post(
+
+          "https://openrouter.ai/api/v1/chat/completions",
+
+          {
+            model,
+
+            max_tokens: 120,
+
+            temperature: 0.7,
+
+            messages
+          },
+
+          {
+            headers: {
+
+              Authorization:
 `Bearer ${OPENROUTER_API_KEY}`,
 
-          "Content-Type":
+              "Content-Type":
 "application/json",
 
-          "HTTP-Referer":
+              "HTTP-Referer":
 "https://bot-run-np12.onrender.com",
 
-          "X-Title":
+              "X-Title":
 "Supreme Bot"
 
-        }
-      }
+            }
+          }
 
-    );
+        );
 
-    const reply =
+        const reply =
 response.data
 .choices[0]
 .message.content;
 
-    // Save AI reply
-    memory[userId].push({
-      role: "assistant",
-      content: reply
-    });
+        // Save AI reply
+        memory[userId].push({
+          role: "assistant",
+          content: reply
+        });
 
-    return reply;
+        return reply;
+
+      } catch (err) {
+
+        console.log(
+          `❌ Failed: ${model}`
+        );
+
+      }
+    }
+
+    return `
+⚠️ All AI servers are busy right now.
+Please try again later.
+`;
 
   } catch (err) {
 
@@ -241,7 +289,9 @@ response.data
       err.response?.data || err.message
     );
 
-    return "⚡ Please try again.";
+    return `
+⚠️ AI system temporarily unavailable.
+`;
   }
 }
 
