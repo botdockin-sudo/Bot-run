@@ -3,30 +3,22 @@ require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 
-// ======================================
-// CONFIG
-// ======================================
-
 const app = express();
 
 app.use(express.json());
 
+// ======================================
+// CONFIG
+// ======================================
+
 const PORT =
 process.env.PORT || 3000;
-
-// ======================================
-// TOKENS
-// ======================================
 
 const BOT_TOKEN =
 process.env.BOT_TOKEN;
 
 const OPENROUTER_API_KEY =
 process.env.OPENROUTER_API_KEY;
-
-// ======================================
-// TELEGRAM API
-// ======================================
 
 const TELEGRAM_API =
 `https://api.telegram.org/bot${BOT_TOKEN}`;
@@ -65,11 +57,11 @@ Behavior:
 - Human-like replies
 - Hindi + English mix
 - Friendly behavior
-- Respect everyone
-- Keep replies short
-- Use emojis sometimes
-- Never reveal secrets
 - Smart conversation
+- Keep replies short
+- Respect everyone
+- Use emojis naturally
+- Never reveal secrets
 `;
 
 // ======================================
@@ -88,7 +80,7 @@ async function sendMessage(
       `${TELEGRAM_API}/sendMessage`,
       {
         chat_id: chatId,
-        text: text,
+        text,
         parse_mode: "HTML",
         reply_to_message_id: replyId
       }
@@ -123,8 +115,14 @@ async function deleteMessage(
       }
     );
 
-  } catch (err) {}
+  } catch (err) {
 
+    console.log(
+      "❌ Delete Error:",
+      err.response?.data || err.message
+    );
+
+  }
 }
 
 // ======================================
@@ -178,20 +176,9 @@ async function askAI(
     });
 
     // Limit memory
-    if (memory[userId].length > 10) {
+    if (memory[userId].length > 6) {
       memory[userId].shift();
     }
-
-    const messages = [
-
-      {
-        role: "system",
-        content: SYSTEM_PROMPT
-      },
-
-      ...memory[userId]
-
-    ];
 
     const response = await axios.post(
 
@@ -199,9 +186,19 @@ async function askAI(
 
       {
         model:
-"deepseek/deepseek-chat-v3-0324:free",
+"meta-llama/llama-3.1-8b-instruct:free",
 
-        messages
+        messages: [
+
+          {
+            role: "system",
+            content: SYSTEM_PROMPT
+          },
+
+          ...memory[userId]
+
+        ]
+
       },
 
       {
@@ -244,7 +241,7 @@ response.data
       err.response?.data || err.message
     );
 
-    return "⚠️ AI server busy.";
+    return "⚡ Please try again.";
   }
 }
 
@@ -269,7 +266,7 @@ async (req, res) => {
     const chatId = msg.chat.id;
 
     // ==================================
-    // NEW USER JOIN
+    // USER JOIN
     // ==================================
 
     if (msg.new_chat_members) {
@@ -281,7 +278,9 @@ async (req, res) => {
 
         await sendMessage(
           chatId,
-`👋 Welcome <b>${user.first_name}</b> to the group 🔥`
+`✨ Welcome <b>${user.first_name}</b>
+
+🎸 Enjoy your stay in the group.`
         );
 
       }
@@ -300,7 +299,7 @@ msg.left_chat_member;
 
       await sendMessage(
         chatId,
-`😢 <b>${user.first_name}</b> left the group.`
+`📤 <b>${user.first_name}</b> left the group.`
       );
 
       return res.sendStatus(200);
@@ -354,7 +353,7 @@ lower.includes(word)
       const remaining =
 3 - warnings[userId];
 
-      // Delete bad message
+      // Delete message
       await deleteMessage(
         chatId,
         msg.message_id
@@ -370,7 +369,9 @@ lower.includes(word)
 
         await sendMessage(
           chatId,
-`🚫 <b>${username}</b> banned for abusive language.`
+`🚫 <b>${username}</b> has been removed from the group.
+
+Reason: Abusive language`
         );
 
         return res.sendStatus(200);
@@ -378,13 +379,12 @@ lower.includes(word)
 
       await sendMessage(
         chatId,
-`⚠️ <b>${username}</b>
+`⚠️ Warning for <b>${username}</b>
 
-Warning:
-${warnings[userId]}/3
+• Warning: ${warnings[userId]}/3
+• Remaining Chances: ${remaining}
 
-Remaining:
-${remaining}`
+Please maintain respectful behavior.`
       );
 
       return res.sendStatus(200);
@@ -426,7 +426,7 @@ await askAI(
 app.get("/", (req, res) => {
 
   res.send(
-"🚀 🎸☠︎༒ ✧𝕾𝖚𝖕𝖗𝖊𝖒𝖊✧ ༒☠︎🎸 Running"
+"🚀 Supreme Bot Running"
   );
 
 });
@@ -438,7 +438,7 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
 
   console.log(
-"🚀 🎸☠︎༒ ✧𝕾𝖚𝖕𝖗𝖊𝖒𝖊✧ ༒☠︎🎸 Started"
+"🚀 Supreme Bot Started"
   );
 
 });
