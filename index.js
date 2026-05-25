@@ -45,25 +45,20 @@ const badWords = [
   "lund",
   "lavda",
   "gaand",
-  "kutta",
   "harami",
   "kamina",
   "randi",
-  "saala",
-  "fuck",
-  "bitch",
-  "bastard",
-  "idiot",
-  "stupid",
-  "motherfucker",
   "bsdk",
   "mkc",
-  "bkl"
+  "bkl",
+  "fuck",
+  "bitch",
+  "motherfucker"
 
 ];
 
 // ======================================
-// AI MODELS
+// FAST AI MODELS
 // ======================================
 
 const models = [
@@ -112,21 +107,30 @@ async function sendMessage(
 
   try {
 
+    const data = {
+      chat_id: chatId,
+      text: text
+    };
+
+    // Reply if available
+    if (replyId) {
+
+      data.reply_to_message_id =
+      replyId;
+
+    }
+
     await axios.post(
       `${TELEGRAM_API}/sendMessage`,
-      {
-        chat_id: chatId,
-        text,
-        parse_mode: "HTML",
-        reply_to_message_id: replyId
-      }
+      data
     );
 
   } catch (err) {
 
     console.log(
       "❌ Send Error:",
-      err.response?.data || err.message
+      err.response?.data ||
+      err.message
     );
 
   }
@@ -155,7 +159,8 @@ async function deleteMessage(
 
     console.log(
       "❌ Delete Error:",
-      err.response?.data || err.message
+      err.response?.data ||
+      err.message
     );
 
   }
@@ -184,7 +189,8 @@ async function banUser(
 
     console.log(
       "❌ Ban Error:",
-      err.response?.data || err.message
+      err.response?.data ||
+      err.message
     );
 
   }
@@ -211,8 +217,8 @@ async function askAI(
       content: message
     });
 
-    // Limit memory
-    if (memory[userId].length > 6) {
+    // Small memory for speed
+    if (memory[userId].length > 3) {
       memory[userId].shift();
     }
 
@@ -247,9 +253,9 @@ async function askAI(
           {
             model,
 
-            max_tokens: 80,
+            max_tokens: 40,
 
-            temperature: 0.7,
+            temperature: 0.4,
 
             messages
           },
@@ -290,8 +296,7 @@ response.data
       } catch (err) {
 
         console.log(
-          "❌ Failed:",
-          model
+          `❌ Failed: ${model}`
         );
 
         console.log(
@@ -303,7 +308,7 @@ response.data
     }
 
     return `
-⚠️ AI servers are busy.
+⚠️ AI servers busy.
 Please try again later.
 `;
 
@@ -311,11 +316,12 @@ Please try again later.
 
     console.log(
       "❌ AI Error:",
-      err.response?.data || err.message
+      err.response?.data ||
+      err.message
     );
 
     return `
-⚠️ AI system unavailable.
+⚠️ AI unavailable.
 `;
   }
 }
@@ -353,7 +359,7 @@ async (req, res) => {
 
         await sendMessage(
           chatId,
-`✨ Welcome <b>${user.first_name}</b>
+`✨ Welcome ${user.first_name}
 
 🎸 Enjoy your stay in the group.`
         );
@@ -374,7 +380,7 @@ msg.left_chat_member;
 
       await sendMessage(
         chatId,
-`📤 <b>${user.first_name}</b> left the group.`
+`📤 ${user.first_name} left the group.`
       );
 
       return res.sendStatus(200);
@@ -428,7 +434,7 @@ lower.includes(word)
       const remaining =
 3 - warnings[userId];
 
-      // Delete bad message
+      // Delete message
       await deleteMessage(
         chatId,
         msg.message_id
@@ -444,7 +450,7 @@ lower.includes(word)
 
         await sendMessage(
           chatId,
-`🚫 <b>${username}</b> has been removed from the group.
+`🚫 ${username} removed from group.
 
 Reason: Abusive language`
         );
@@ -454,12 +460,10 @@ Reason: Abusive language`
 
       await sendMessage(
         chatId,
-`⚠️ Warning for <b>${username}</b>
+`⚠️ Warning for ${username}
 
 • Warning: ${warnings[userId]}/3
-• Remaining Chances: ${remaining}
-
-Please maintain respectful behavior.`
+• Remaining: ${remaining}`
       );
 
       return res.sendStatus(200);
