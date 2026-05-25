@@ -35,12 +35,31 @@ const warnings = {};
 // ======================================
 
 const badWords = [
+
   "mc",
   "bc",
   "madarchod",
   "bhosdike",
   "gandu",
-  "chutiya"
+  "chutiya",
+  "lund",
+  "lavda",
+  "gaand",
+  "kutta",
+  "harami",
+  "kamina",
+  "randi",
+  "saala",
+  "fuck",
+  "bitch",
+  "bastard",
+  "idiot",
+  "stupid",
+  "motherfucker",
+  "bsdk",
+  "mkc",
+  "bkl"
+
 ];
 
 // ======================================
@@ -49,13 +68,13 @@ const badWords = [
 
 const models = [
 
-  "google/gemma-3-27b-it:free",
+  "openai/gpt-oss-20b:free",
 
-  "deepseek/deepseek-chat-v3-0324:free",
+  "google/gemma-2-9b-it:free",
 
-  "meta-llama/llama-3.1-8b-instruct:free",
+  "microsoft/phi-3-mini-128k-instruct:free",
 
-  "mistralai/mistral-7b-instruct:free"
+  "qwen/qwen-2.5-7b-instruct:free"
 
 ];
 
@@ -186,7 +205,7 @@ async function askAI(
       memory[userId] = [];
     }
 
-    // Save user message
+    // Save message
     memory[userId].push({
       role: "user",
       content: message
@@ -228,7 +247,7 @@ async function askAI(
           {
             model,
 
-            max_tokens: 120,
+            max_tokens: 80,
 
             temperature: 0.7,
 
@@ -271,14 +290,20 @@ response.data
       } catch (err) {
 
         console.log(
-          `❌ Failed: ${model}`
+          "❌ Failed:",
+          model
+        );
+
+        console.log(
+          err.response?.data ||
+          err.message
         );
 
       }
     }
 
     return `
-⚠️ All AI servers are busy right now.
+⚠️ AI servers are busy.
 Please try again later.
 `;
 
@@ -290,7 +315,7 @@ Please try again later.
     );
 
     return `
-⚠️ AI system temporarily unavailable.
+⚠️ AI system unavailable.
 `;
   }
 }
@@ -356,7 +381,7 @@ msg.left_chat_member;
     }
 
     // ==================================
-    // TEXT CHECK
+    // CHECK TEXT
     // ==================================
 
     if (!msg.text) {
@@ -403,7 +428,7 @@ lower.includes(word)
       const remaining =
 3 - warnings[userId];
 
-      // Delete message
+      // Delete bad message
       await deleteMessage(
         chatId,
         msg.message_id
