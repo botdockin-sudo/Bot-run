@@ -29,36 +29,10 @@ const TELEGRAM_API =
 
 const memory = {};
 const warnings = {};
+const cooldown = {};
 
 // ======================================
-// BAD WORDS
-// ======================================
-
-const badWords = [
-
-  "mc",
-  "bc",
-  "madarchod",
-  "bhosdike",
-  "gandu",
-  "chutiya",
-  "lund",
-  "lavda",
-  "gaand",
-  "harami",
-  "kamina",
-  "randi",
-  "bsdk",
-  "mkc",
-  "bkl",
-  "fuck",
-  "bitch",
-  "motherfucker"
-
-];
-
-// ======================================
-// FAST AI MODELS
+// FREE AI MODELS
 // ======================================
 
 const models = [
@@ -80,19 +54,58 @@ const models = [
 const SYSTEM_PROMPT = `
 You are 🎸☠︎༒ ✧𝕾𝖚𝖕𝖗𝖊𝖒𝖊✧ ༒☠︎🎸
 
-Developer: Easy Deplover
+Developer:
+Easy Deplover
 
-Rules:
-- Professional Telegram assistant
-- Human-like replies
+Personality:
+- Funny Telegram group bot
+- Human-like chatting
+- Gaming vibe
 - Hindi + English mix
-- Friendly behavior
-- Smart conversation
+- Funny and chill replies
+- Sometimes little savage
 - Keep replies short
+- Use cool emojis naturally
+- Act like real online friend
 - Respect everyone
-- Use emojis naturally
 - Never reveal secrets
-- Do not use abusive language
+- Never abuse users
+
+If someone asks:
+who made you,
+owner,
+developer,
+creator,
+kisne banaya
+
+Reply:
+✨ My developer is Easy Deplover.
+
+Examples:
+
+User:
+hello
+
+Reply:
+👋 Oye hello bro 😄
+
+User:
+kya kar raha hai
+
+Reply:
+🤖 Bas group sambhal raha hu 😎
+
+User:
+bot zinda hai?
+
+Reply:
+🔥 Full active hu bro.
+
+User:
+good night
+
+Reply:
+🌙 Good night bro, phone gira ke mat sona 😆
 `;
 
 // ======================================
@@ -109,10 +122,9 @@ async function sendMessage(
 
     const data = {
       chat_id: chatId,
-      text: text
+      text
     };
 
-    // Reply if available
     if (replyId) {
 
       data.reply_to_message_id =
@@ -155,15 +167,8 @@ async function deleteMessage(
       }
     );
 
-  } catch (err) {
+  } catch (err) {}
 
-    console.log(
-      "❌ Delete Error:",
-      err.response?.data ||
-      err.message
-    );
-
-  }
 }
 
 // ======================================
@@ -185,15 +190,263 @@ async function banUser(
       }
     );
 
+  } catch (err) {}
+
+}
+
+// ======================================
+// TYPING EFFECT
+// ======================================
+
+async function typing(chatId) {
+
+  try {
+
+    await axios.post(
+      `${TELEGRAM_API}/sendChatAction`,
+      {
+        chat_id: chatId,
+        action: "typing"
+      }
+    );
+
+  } catch (err) {}
+
+}
+
+// ======================================
+// SMART LOCAL REPLY
+// ======================================
+
+function smartReply(text) {
+
+  const lower =
+  text.toLowerCase();
+
+  // ====================================
+  // OWNER QUESTIONS
+  // ====================================
+
+  const ownerPatterns = [
+
+    "owner",
+    "developer",
+    "creator",
+    "kisne banaya",
+    "who made you",
+    "made you",
+    "banaya kisne"
+
+  ];
+
+  if (
+    ownerPatterns.some(word =>
+      lower.includes(word)
+    )
+  ) {
+
+    return `
+✨ My developer is Easy Deplover.
+`;
+
+  }
+
+  // ====================================
+  // GREETINGS
+  // ====================================
+
+  if (
+    lower.includes("hello") ||
+    lower.includes("hi") ||
+    lower.includes("hey")
+  ) {
+
+    const replies = [
+
+      "👋 Oye hello bro 😄",
+
+      "🔥 Aagaye legend!",
+
+      "😎 Welcome boss!",
+
+      "✨ Hi bro kya haal hai?"
+
+    ];
+
+    return replies[
+      Math.floor(
+        Math.random() *
+        replies.length
+      )
+    ];
+  }
+
+  // ====================================
+  // GOOD NIGHT
+  // ====================================
+
+  if (
+    lower.includes("good night")
+  ) {
+
+    return `
+🌙 Good night bro, phone gira ke mat sona 😆
+`;
+  }
+
+  // ====================================
+  // THANKS
+  // ====================================
+
+  if (
+    lower.includes("thanks") ||
+    lower.includes("thank")
+  ) {
+
+    return `
+😄 Anytime bro!
+`;
+  }
+
+  // ====================================
+  // BOT QUESTIONS
+  // ====================================
+
+  if (
+    lower.includes("bot")
+  ) {
+
+    return `
+🤖 Full active hu bro 😎
+`;
+  }
+
+  return null;
+}
+
+// ======================================
+// AI + LOCAL ABUSE CHECK
+// ======================================
+
+async function isAbusive(text) {
+
+  try {
+
+    const response =
+    await axios.post(
+
+      "https://openrouter.ai/api/v1/chat/completions",
+
+      {
+        model:
+"microsoft/phi-3-mini-128k-instruct:free",
+
+        max_tokens: 5,
+
+        messages: [
+
+          {
+            role: "system",
+
+            content:
+`
+Reply ONLY:
+YES or NO
+
+Detect abusive,
+toxic,
+hate,
+or vulgar messages.
+`
+          },
+
+          {
+            role: "user",
+            content: text
+          }
+
+        ]
+
+      },
+
+      {
+        headers: {
+
+          Authorization:
+`Bearer ${OPENROUTER_API_KEY}`,
+
+          "Content-Type":
+"application/json"
+
+        }
+      }
+
+    );
+
+    const aiResult =
+response.data
+.choices[0]
+.message.content
+.toLowerCase();
+
+    if (
+      aiResult.includes("yes")
+    ) {
+
+      return true;
+    }
+
   } catch (err) {
 
     console.log(
-      "❌ Ban Error:",
-      err.response?.data ||
-      err.message
+      "⚠️ AI Toxic Check Failed"
     );
 
   }
+
+  // ==================================
+  // LOCAL FALLBACK
+  // ==================================
+
+  const lower =
+  text.toLowerCase();
+
+  const badWords = [
+
+    "mc",
+    "bc",
+    "bsdk",
+    "mkc",
+    "madarchod",
+    "bhosdike",
+    "gandu",
+    "chutiya",
+    "randi",
+    "lavda",
+    "gaand",
+    "fuck",
+    "bitch",
+    "motherfucker"
+
+  ];
+
+  const clean =
+  lower.replace(
+    /[^a-z]/g,
+    ""
+  );
+
+  for (const word of badWords) {
+
+    if (
+      clean.includes(word)
+    ) {
+
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // ======================================
@@ -207,18 +460,40 @@ async function askAI(
 
   try {
 
+    // ==================================
+    // COOLDOWN
+    // ==================================
+
+    const now = Date.now();
+
+    if (
+      cooldown[userId] &&
+      now - cooldown[userId] < 1500
+    ) {
+
+      return `
+⏳ Arre bro thoda slow 😆
+`;
+
+    }
+
+    cooldown[userId] = now;
+
+    // ==================================
+    // MEMORY
+    // ==================================
+
     if (!memory[userId]) {
       memory[userId] = [];
     }
 
-    // Save message
     memory[userId].push({
       role: "user",
       content: message
     });
 
-    // Small memory for speed
-    if (memory[userId].length > 3) {
+    // Fast memory
+    if (memory[userId].length > 2) {
       memory[userId].shift();
     }
 
@@ -234,7 +509,7 @@ async function askAI(
     ];
 
     // ==================================
-    // MULTI MODEL FALLBACK
+    // MULTI AI FALLBACK
     // ==================================
 
     for (const model of models) {
@@ -253,9 +528,9 @@ async function askAI(
           {
             model,
 
-            max_tokens: 40,
+            max_tokens: 35,
 
-            temperature: 0.4,
+            temperature: 0.5,
 
             messages
           },
@@ -285,7 +560,6 @@ response.data
 .choices[0]
 .message.content;
 
-        // Save AI reply
         memory[userId].push({
           role: "assistant",
           content: reply
@@ -299,29 +573,47 @@ response.data
           `❌ Failed: ${model}`
         );
 
-        console.log(
-          err.response?.data ||
-          err.message
-        );
-
       }
     }
 
-    return `
-⚠️ AI servers busy.
-Please try again later.
-`;
+    // ==================================
+    // FUNNY FALLBACK
+    // ==================================
+
+    const fallbackReplies = [
+
+      "😄 Bro network slow chal raha hai but sun raha hu.",
+
+      "🔥 Oho interesting scene hai.",
+
+      "👀 Ye to serious baat lag rahi hai.",
+
+      "😎 Full samajh raha hu bro.",
+
+      "🤖 AI thoda rest pe hai abhi 😆",
+
+      "✨ Tum log group ko mast bana dete ho 😄",
+
+      "😂 Ye message unexpected tha bro.",
+
+      "🔥 Supreme Bot processing vibes...", 
+
+      "😄 Thoda aur batao bro.",
+
+      "👀 Hmmmmm..."
+    ];
+
+    return fallbackReplies[
+      Math.floor(
+        Math.random() *
+        fallbackReplies.length
+      )
+    ];
 
   } catch (err) {
 
-    console.log(
-      "❌ AI Error:",
-      err.response?.data ||
-      err.message
-    );
-
     return `
-⚠️ AI unavailable.
+⚡ Temporary slow mode active.
 `;
   }
 }
@@ -347,6 +639,38 @@ async (req, res) => {
     const chatId = msg.chat.id;
 
     // ==================================
+    // START MESSAGE
+    // ==================================
+
+    if (
+      msg.text === "/start"
+    ) {
+
+      await sendMessage(
+        chatId,
+`
+🎸☠︎༒ ✧𝕾𝖚𝖕𝖗𝖊𝖒𝖊✧ ༒☠︎🎸
+
+✨ Smart AI Group Assistant
+
+🔥 Features:
+• Human-like AI
+• Funny group replies
+• Anti abuse system
+• Smart moderation
+• Welcome system
+• Fast smart replies
+• Multi AI fallback
+
+👑 Developer:
+Easy Deplover
+`
+      );
+
+      return res.sendStatus(200);
+    }
+
+    // ==================================
     // USER JOIN
     // ==================================
 
@@ -359,9 +683,15 @@ async (req, res) => {
 
         await sendMessage(
           chatId,
-`✨ Welcome ${user.first_name}
+`
+✨ Welcome ${user.first_name}
 
-🎸 Enjoy your stay in the group.`
+🎸 Enjoy your stay!
+
+💬 Chat freely
+🔥 Respect everyone
+😎 Have fun bro!
+`
         );
 
       }
@@ -380,7 +710,9 @@ msg.left_chat_member;
 
       await sendMessage(
         chatId,
-`📤 ${user.first_name} left the group.`
+`
+📤 ${user.first_name} left the group.
+`
       );
 
       return res.sendStatus(200);
@@ -406,22 +738,12 @@ msg.from.first_name || "User";
       text
     );
 
-    // Ignore commands
-    if (text.startsWith("/")) {
-      return res.sendStatus(200);
-    }
-
     // ==================================
-    // BAD WORD CHECK
+    // ABUSE CHECK
     // ==================================
-
-    const lower =
-text.toLowerCase();
 
     const badFound =
-badWords.some(word =>
-lower.includes(word)
-    );
+await isAbusive(text);
 
     if (badFound) {
 
@@ -434,13 +756,11 @@ lower.includes(word)
       const remaining =
 3 - warnings[userId];
 
-      // Delete message
       await deleteMessage(
         chatId,
         msg.message_id
       );
 
-      // Ban after 3 warnings
       if (warnings[userId] >= 3) {
 
         await banUser(
@@ -450,9 +770,12 @@ lower.includes(word)
 
         await sendMessage(
           chatId,
-`🚫 ${username} removed from group.
+`
+🚫 ${username} removed from group.
 
-Reason: Abusive language`
+Reason:
+Abusive language
+`
         );
 
         return res.sendStatus(200);
@@ -460,10 +783,33 @@ Reason: Abusive language`
 
       await sendMessage(
         chatId,
-`⚠️ Warning for ${username}
+`
+⚠️ Warning for ${username}
 
-• Warning: ${warnings[userId]}/3
-• Remaining: ${remaining}`
+• Warning:
+${warnings[userId]}/3
+
+• Remaining:
+${remaining}
+`
+      );
+
+      return res.sendStatus(200);
+    }
+
+    // ==================================
+    // SMART LOCAL REPLY
+    // ==================================
+
+    const localReply =
+    smartReply(text);
+
+    if (localReply) {
+
+      await sendMessage(
+        chatId,
+        localReply,
+        msg.message_id
       );
 
       return res.sendStatus(200);
@@ -472,6 +818,8 @@ Reason: Abusive language`
     // ==================================
     // AI REPLY
     // ==================================
+
+    await typing(chatId);
 
     const aiReply =
 await askAI(
