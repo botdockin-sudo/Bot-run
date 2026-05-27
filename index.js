@@ -1,11 +1,38 @@
+// ======================================
+// SUPREME TELEGRAM BOT
+// FULL FIXED VERSION
+// GROUP ISOLATED GAME SYSTEM
+// SOCKET.IO + WEBRTC READY
+// ======================================
+
 require("dotenv").config();
 
 const express = require("express");
 const axios = require("axios");
+const http = require("http");
+
+const { Server } =
+require("socket.io");
 
 const app = express();
 
+const server =
+http.createServer(app);
+
+const io =
+new Server(server, {
+
+cors:{
+origin:"*"
+}
+
+});
+
 app.use(express.json());
+
+app.use(
+express.static("public")
+);
 
 // ======================================
 // CONFIG
@@ -19,6 +46,9 @@ process.env.BOT_TOKEN;
 
 const OPENROUTER_API_KEY =
 process.env.OPENROUTER_API_KEY;
+
+const GAME_URL =
+process.env.GAME_URL;
 
 const TELEGRAM_API =
 `https://api.telegram.org/bot${BOT_TOKEN}`;
@@ -35,17 +65,44 @@ const lastActive = {};
 const selectedPromotion = {};
 
 // ======================================
-// FREE AI MODELS
+// GROUP ISOLATED ROOMS
+// ======================================
+
+/*
+
+STRUCTURE
+
+gameRooms = {
+
+groupId: {
+
+roomId: {
+...
+}
+
+}
+
+}
+
+*/
+
+const gameRooms = {};
+
+// ======================================
+// SOCKET PLAYERS
+// ======================================
+
+const socketPlayers = {};
+
+// ======================================
+// AI MODELS
 // ======================================
 
 const models = [
 
 "openai/gpt-oss-20b:free",
-
 "google/gemma-2-9b-it:free",
-
 "microsoft/phi-3-mini-128k-instruct:free",
-
 "qwen/qwen-2.5-7b-instruct:free"
 
 ];
@@ -61,24 +118,11 @@ Developer:
 Easy Deplover
 
 Rules:
-- Funny group bot
-- Hindi + English mix
-- Human style chatting
-- Short replies
-- Fun personality
-- Never abusive
-- Friendly replies
+- Friendly
+- Hindi English mix
+- Human style
 - Smart replies
-- Cool emojis
-
-If user asks:
-owner
-developer
-creator
-who made you
-
-Reply:
-✨ My developer is Easy Deplover.
+- Never abusive
 `;
 
 // ======================================
@@ -90,66 +134,52 @@ chatId,
 text,
 replyId = null,
 buttons = null
-) {
+){
 
-try {
+try{
 
 const data = {
 
-chat_id: chatId,
-text
+chat_id:chatId,
+text,
+parse_mode:"HTML"
 
 };
 
-if (replyId) {
+if(replyId){
 
 data.reply_to_message_id =
 replyId;
 
 }
 
-if (buttons) {
+if(buttons){
 
 data.reply_markup = {
-inline_keyboard: buttons
+
+inline_keyboard:buttons
+
 };
 
 }
 
 await axios.post(
+
 `${TELEGRAM_API}/sendMessage`,
+
 data
+
 );
 
-} catch (err) {
+}catch(err){
 
 console.log(
-"❌ Send Error:",
+"Send Error:",
 err.response?.data ||
 err.message
 );
 
 }
-
-}
-
-// ======================================
-// TYPING
-// ======================================
-
-async function typing(chatId) {
-
-try {
-
-await axios.post(
-`${TELEGRAM_API}/sendChatAction`,
-{
-chat_id: chatId,
-action: "typing"
-}
-);
-
-} catch (err) {}
 
 }
 
@@ -160,19 +190,22 @@ action: "typing"
 async function deleteMessage(
 chatId,
 messageId
-) {
+){
 
-try {
+try{
 
 await axios.post(
+
 `${TELEGRAM_API}/deleteMessage`,
+
 {
-chat_id: chatId,
-message_id: messageId
+chat_id:chatId,
+message_id:messageId
 }
+
 );
 
-} catch (err) {}
+}catch(err){}
 
 }
 
@@ -183,95 +216,111 @@ message_id: messageId
 async function banUser(
 chatId,
 userId
-) {
+){
 
-try {
+try{
 
 await axios.post(
+
 `${TELEGRAM_API}/banChatMember`,
+
 {
-chat_id: chatId,
-user_id: userId
+chat_id:chatId,
+user_id:userId
 }
+
 );
 
-} catch (err) {}
+}catch(err){}
 
 }
 
 // ======================================
-// SMART LOCAL REPLY
+// TYPING
 // ======================================
 
-function smartReply(text) {
+async function typing(chatId){
+
+try{
+
+await axios.post(
+
+`${TELEGRAM_API}/sendChatAction`,
+
+{
+chat_id:chatId,
+action:"typing"
+}
+
+);
+
+}catch(err){}
+
+}
+
+// ======================================
+// ROOM ID
+// ======================================
+
+function generateRoomId(){
+
+return (
+
+Math.random()
+.toString(36)
+.substring(2,8)
+
++
+
+Date.now()
+.toString(36)
+.substring(4)
+
+);
+
+}
+
+// ======================================
+// SMART REPLY
+// ======================================
+
+function smartReply(text){
 
 const lower =
 text.toLowerCase();
 
-if (
-lower.includes("hello") ||
-lower.includes("hi")
-) {
+if(
+lower.includes("hi") ||
+lower.includes("hello")
+){
 
-const replies = [
-
-"👋 Oye hello bro 😄",
-
-"🔥 Aagaye legend 😎",
-
-"✨ Hi bro kya haal hai?",
-
-"😄 Welcome boss"
-
-];
-
-return replies[
-Math.floor(
-Math.random() *
-replies.length
-)
-];
+return "Hello bro";
 
 }
 
-if (
+if(
 lower.includes("good morning")
-) {
+){
 
-return `
-🌅 Good morning bro ☕
-Aaj ka mood full chill 😎
-`;
+return "Good morning";
+
 }
 
-if (
+if(
 lower.includes("good night")
-) {
+){
 
-return `
-🌙 Good night bro 😴
-`;
+return "Good night";
+
 }
 
-if (
+if(
 lower.includes("developer") ||
-lower.includes("owner") ||
-lower.includes("creator") ||
-lower.includes("who made you")
-) {
+lower.includes("owner")
+){
 
-return `
-✨ My developer is Easy Deplover.
-`;
-}
+return "Developer: Easy Deplover";
 
-if (
-lower.includes("bot")
-) {
-
-return `
-🤖 Full active hu bro 😎
-`;
 }
 
 return null;
@@ -282,7 +331,7 @@ return null;
 // ABUSE CHECK
 // ======================================
 
-async function isAbusive(text) {
+async function isAbusive(text){
 
 const lower =
 text.toLowerCase();
@@ -310,13 +359,12 @@ const badWords = [
 
 ];
 
-for (const word of badWords) {
+for(const word of badWords){
 
-if (
-clean.includes(word)
-) {
+if(clean.includes(word)){
 
 return true;
+
 }
 
 }
@@ -332,26 +380,25 @@ return false;
 async function askAI(
 userId,
 message
-) {
+){
 
-try {
+try{
 
 const now =
 Date.now();
 
-if (
+if(
 cooldown[userId] &&
 now - cooldown[userId] < 1500
-) {
+){
 
-return `
-⏳ Slow bro 😆
-`;
+return "Slow down";
+
 }
 
 cooldown[userId] = now;
 
-if (!memory[userId]) {
+if(!memory[userId]){
 
 memory[userId] = [];
 
@@ -359,14 +406,14 @@ memory[userId] = [];
 
 memory[userId].push({
 
-role: "user",
-content: message
+role:"user",
+content:message
 
 });
 
-if (
+if(
 memory[userId].length > 4
-) {
+){
 
 memory[userId].shift();
 
@@ -375,21 +422,17 @@ memory[userId].shift();
 const messages = [
 
 {
-role: "system",
-content: SYSTEM_PROMPT
+role:"system",
+content:SYSTEM_PROMPT
 },
 
 ...memory[userId]
 
 ];
 
-for (const model of models) {
+for(const model of models){
 
-try {
-
-console.log(
-`🤖 Trying: ${model}`
-);
+try{
 
 const response =
 await axios.post(
@@ -400,9 +443,9 @@ await axios.post(
 
 model,
 
-max_tokens: 60,
+max_tokens:60,
 
-temperature: 0.7,
+temperature:0.7,
 
 messages
 
@@ -410,7 +453,7 @@ messages
 
 {
 
-headers: {
+headers:{
 
 Authorization:
 `Bearer ${OPENROUTER_API_KEY}`,
@@ -431,94 +474,248 @@ response.data
 
 memory[userId].push({
 
-role: "assistant",
-content: reply
+role:"assistant",
+content:reply
 
 });
 
 return reply;
 
-} catch (err) {
+}catch(err){}
+
+}
+
+return "AI busy";
+
+}catch(err){
+
+return "AI error";
+
+}
+
+}
+
+// ======================================
+// SOCKET.IO
+// ======================================
+
+io.on(
+"connection",
+socket=>{
 
 console.log(
-`❌ Failed: ${model}`
+"Socket connected:",
+socket.id
+);
+
+// ====================================
+// JOIN ROOM
+// ====================================
+
+socket.on(
+"join-room",
+data=>{
+
+if(!data) return;
+
+const roomId =
+data.roomId;
+
+const player =
+data.player;
+
+const groupId =
+data.groupId;
+
+if(
+!roomId ||
+!player ||
+!groupId
+)return;
+
+// ================================
+// VALIDATE GROUP ROOM
+// ================================
+
+if(
+!gameRooms[groupId] ||
+!gameRooms[groupId][roomId]
+){
+
+socket.emit(
+"invalid-room"
+);
+
+return;
+
+}
+
+socket.join(roomId);
+
+socketPlayers[
+socket.id
+] = {
+
+roomId,
+groupId,
+player
+
+};
+
+socket.to(roomId)
+.emit(
+"player-joined",
+player
 );
 
 }
+);
+
+// ====================================
+// GAME MOVE
+// ====================================
+
+socket.on(
+"game-move",
+data=>{
+
+if(!data) return;
+
+if(!data.roomId)
+return;
+
+socket.to(
+data.roomId
+).emit(
+"game-move",
+data
+);
 
 }
+);
 
-const fallbackReplies = [
+// ====================================
+// VOICE SIGNAL
+// ====================================
 
-"😄 Samajh raha hu bro",
+socket.on(
+"voice-signal",
+data=>{
 
-"🔥 Interesting scene hai",
+if(!data) return;
 
-"👀 Ye unexpected tha",
+if(!data.roomId)
+return;
 
-"😎 Full vibe me hu",
+socket.to(
+data.roomId
+).emit(
+"voice-signal",
+data
+);
 
-"🤖 AI thoda rest pe hai 😆"
+}
+);
 
+// ====================================
+// DISCONNECT
+// ====================================
+
+socket.on(
+"disconnect",
+()=>{
+
+const player =
+socketPlayers[
+socket.id
 ];
 
-return fallbackReplies[
-Math.floor(
-Math.random() *
-fallbackReplies.length
-)
+if(player){
+
+socket.to(
+player.roomId
+).emit(
+"player-disconnected"
+);
+
+delete socketPlayers[
+socket.id
 ];
 
-} catch (err) {
-
-return `
-⚡ AI slow mode.
-`;
 }
 
 }
+);
+
+});
 
 // ======================================
-// AUTO ACTIVE MESSAGE
+// GOOD MORNING
 // ======================================
 
-setInterval(async () => {
+setInterval(async()=>{
 
 const now =
-Date.now();
+new Date();
 
-for (const chatId in lastActive) {
+if(
+now.getHours() === 6 &&
+now.getMinutes() === 0
+){
 
-const diff =
-now - lastActive[chatId];
-
-if (
-diff >
-1000 * 60 * 60
-) {
-
-try {
+for(const id in groups){
 
 await sendMessage(
-chatId,
-`
-😴 Group so gaya kya?
 
-🔥 Active aao bhai
-maze karte hai 😎
+id,
+
 `
+Good morning
+
+Have a good day
+`
+
 );
 
-lastActive[chatId] =
-Date.now();
+}
 
-} catch (err) {}
+}
+
+},60000);
+
+// ======================================
+// GOOD NIGHT
+// ======================================
+
+setInterval(async()=>{
+
+const now =
+new Date();
+
+if(
+now.getHours() === 17 &&
+now.getMinutes() === 0
+){
+
+for(const id in groups){
+
+await sendMessage(
+
+id,
+
+`
+Good night
+
+Take rest
+`
+
+);
 
 }
 
 }
 
-}, 60000);
+},60000);
 
 // ======================================
 // WEBHOOK
@@ -526,20 +723,18 @@ Date.now();
 
 app.post(
 "/webhook",
-async (req, res) => {
+async(req,res)=>{
 
-try {
+try{
 
 const update =
 req.body;
 
 // ====================================
-// CALLBACK
+// CALLBACK QUERY
 // ====================================
 
-if (
-update.callback_query
-) {
+if(update.callback_query){
 
 const query =
 update.callback_query;
@@ -547,180 +742,222 @@ update.callback_query;
 const data =
 query.data;
 
+const user =
+query.from;
+
 const userId =
-query.from.id;
+user.id;
+
+const username =
+user.first_name ||
+"Player";
 
 const chatId =
-query.message.chat.id;
-
-// ================================
-// SELECT GROUP
-// ================================
-
-if (
-data.startsWith("promo_")
-) {
-
-const groupId =
-data.replace(
-"promo_",
-""
+String(
+query.message.chat.id
 );
 
-selectedPromotion[
-userId
-] = groupId;
+// ====================================
+// ENSURE GROUP FOLDER
+// ====================================
 
-const buttons = [];
+if(!gameRooms[chatId]){
 
-for (const id in groups) {
-
-if (id == groupId)
-continue;
-
-buttons.push([
-{
-text:
-groups[id].title,
-
-callback_data:
-`sendpromo_${id}`
-}
-]);
+gameRooms[chatId] = {};
 
 }
 
-buttons.push([
-{
-text:
-"🌍 All Groups",
+// ====================================
+// CREATE GAME
+// ====================================
 
-callback_data:
-"sendpromo_all"
-}
-]);
+if(data === "create_game"){
+
+const roomId =
+generateRoomId();
+
+// ==================================
+// SAVE INSIDE SAME GROUP
+// ==================================
+
+gameRooms[chatId][roomId] = {
+
+host:userId,
+
+hostName:username,
+
+groupId:chatId,
+
+joined:false,
+
+createdAt:Date.now()
+
+};
 
 await sendMessage(
+
 chatId,
-"📨 Select where to send promotion",
+
+`
+${username} created a game room
+
+Join quickly before someone else does.
+`,
+
 null,
-buttons
+
+[
+[
+{
+text:
+"JOIN GAME",
+
+callback_data:
+`join_${roomId}`
+}
+]
+]
+
 );
 
 return res.sendStatus(200);
 
 }
 
-// ================================
-// SEND PROMOTION
-// ================================
+// ====================================
+// JOIN GAME
+// ====================================
 
-if (
-data.startsWith(
-"sendpromo_"
-)
-) {
+if(
+data.startsWith("join_")
+){
 
-const target =
+const roomId =
 data.replace(
-"sendpromo_",
+"join_",
 ""
 );
 
-const promoGroupId =
-selectedPromotion[
-userId
-];
+// ==================================
+// ROOM MUST EXIST
+// INSIDE SAME GROUP
+// ==================================
 
-const promoGroup =
-groups[promoGroupId];
-
-// ==============================
-// CREATE LINK
-// ==============================
-
-const invite =
-await axios.post(
-`${TELEGRAM_API}/createChatInviteLink`,
-{
-chat_id:
-promoGroupId
-}
-);
-
-const inviteLink =
-invite.data.result
-.invite_link;
-
-const promoText =
-`
-🔥 ${promoGroup.title}
-
-✨ Active Telegram Group
-😎 Chill Community
-💬 Daily Fun Chat
-
-👇 Join Fast
-`;
-
-if (
-target === "all"
-) {
-
-for (const id in groups) {
-
-if (
-id == promoGroupId
-)
-continue;
-
-try {
+if(
+!gameRooms[chatId] ||
+!gameRooms[chatId][roomId]
+){
 
 await sendMessage(
-id,
-promoText,
-null,
-[
-[
-{
-text:
-"🚀 Join Group",
 
-url:
-inviteLink
-}
-]
-]
-);
-
-} catch (err) {}
-
-}
-
-} else {
-
-await sendMessage(
-target,
-promoText,
-null,
-[
-[
-{
-text:
-"🚀 Join Group",
-
-url:
-inviteLink
-}
-]
-]
-);
-
-}
-
-await sendMessage(
 chatId,
-"✅ Promotion sent 😎"
+
+"Room not found in this group"
+
+);
+
+return res.sendStatus(200);
+
+}
+
+const room =
+gameRooms[chatId][roomId];
+
+// ==================================
+// ALREADY FULL
+// ==================================
+
+if(room.joined){
+
+await sendMessage(
+
+chatId,
+
+"Room already full"
+
+);
+
+return res.sendStatus(200);
+
+}
+
+// ==================================
+// HOST CHECK
+// ==================================
+
+if(room.host === userId){
+
+await sendMessage(
+
+chatId,
+
+"You cannot join your own room"
+
+);
+
+return res.sendStatus(200);
+
+}
+
+room.joined = true;
+
+// ==================================
+// GAME URL
+// ==================================
+
+const p1Url =
+
+`${GAME_URL}/?room=${roomId}&player=p1&group=${chatId}`;
+
+const p2Url =
+
+`${GAME_URL}/?room=${roomId}&player=p2&group=${chatId}`;
+
+// ==================================
+// MATCH FOUND
+// ==================================
+
+await sendMessage(
+
+chatId,
+
+`
+MATCH FOUND
+
+Player 1:
+${room.hostName}
+
+Player 2:
+${username}
+
+Voice chat enabled
+`,
+
+null,
+
+[
+[
+{
+text:
+"PLAYER 1 PLAY",
+
+web_app:{
+url:p1Url
+}
+}
+],
+[
+{
+text:
+"PLAYER 2 PLAY",
+
+web_app:{
+url:p2Url
+}
+}
+]
+]
+
 );
 
 return res.sendStatus(200);
@@ -733,7 +970,7 @@ return res.sendStatus(200);
 // MESSAGE
 // ====================================
 
-if (!update.message) {
+if(!update.message){
 
 return res.sendStatus(200);
 
@@ -743,23 +980,29 @@ const msg =
 update.message;
 
 const chatId =
-msg.chat.id;
+String(
+msg.chat.id
+);
 
 // ====================================
 // SAVE GROUP
 // ====================================
 
-if (
+if(
+
 msg.chat &&
+
 (
 msg.chat.type === "group" ||
+
 msg.chat.type === "supergroup"
 )
-) {
+
+){
 
 groups[chatId] = {
 
-id: chatId,
+id:chatId,
 
 title:
 msg.chat.title ||
@@ -769,128 +1012,18 @@ msg.chat.title ||
 
 }
 
+// ====================================
+// LAST ACTIVE
+// ====================================
+
 lastActive[chatId] =
 Date.now();
-
-// ====================================
-// START
-// ====================================
-
-if (
-msg.text === "/start"
-) {
-
-await sendMessage(
-chatId,
-`
-🎸 Supreme Bot Started
-
-🔥 Features:
-• AI Chat
-• Smart Replies
-• Anti Abuse
-• Promotion System
-• Welcome Message
-• Auto Active Message
-
-👑 Developer:
-Easy Deplover
-`
-);
-
-return res.sendStatus(200);
-
-}
-
-// ====================================
-// PROMOTION COMMAND
-// ====================================
-
-if (
-msg.text === "/promotion"
-) {
-
-const buttons = [];
-
-for (const id in groups) {
-
-buttons.push([
-{
-text:
-groups[id].title,
-
-callback_data:
-`promo_${id}`
-}
-]);
-
-}
-
-await sendMessage(
-chatId,
-"📢 Select group to promote",
-null,
-buttons
-);
-
-return res.sendStatus(200);
-
-}
-
-// ====================================
-// JOIN
-// ====================================
-
-if (
-msg.new_chat_members
-) {
-
-for (
-const user of
-msg.new_chat_members
-) {
-
-await sendMessage(
-chatId,
-`
-✨ Welcome ${user.first_name}
-
-🔥 Enjoy your stay
-😎 Chill and fun only
-`
-);
-
-}
-
-return res.sendStatus(200);
-
-}
-
-// ====================================
-// LEFT
-// ====================================
-
-if (
-msg.left_chat_member
-) {
-
-await sendMessage(
-chatId,
-`
-📤 ${msg.left_chat_member.first_name}
-left the group.
-`
-);
-
-return res.sendStatus(200);
-
-}
 
 // ====================================
 // TEXT CHECK
 // ====================================
 
-if (!msg.text) {
+if(!msg.text){
 
 return res.sendStatus(200);
 
@@ -899,12 +1032,50 @@ return res.sendStatus(200);
 const userId =
 msg.from.id;
 
-const username =
-msg.from.first_name ||
-"User";
-
 const text =
 msg.text;
+
+// ====================================
+// GAME COMMAND
+// ====================================
+
+if(
+
+text.toLowerCase() === "/game" ||
+
+text.toLowerCase() === "game"
+
+){
+
+await sendMessage(
+
+chatId,
+
+`
+STRATEGY LINE
+
+Tap below to create room
+`,
+
+msg.message_id,
+
+[
+[
+{
+text:
+"CREATE ROOM",
+
+callback_data:
+"create_game"
+}
+]
+]
+
+);
+
+return res.sendStatus(200);
+
+}
 
 // ====================================
 // ABUSE
@@ -913,9 +1084,9 @@ msg.text;
 const badFound =
 await isAbusive(text);
 
-if (badFound) {
+if(badFound){
 
-if (!warnings[userId]) {
+if(!warnings[userId]){
 
 warnings[userId] = 0;
 
@@ -923,17 +1094,14 @@ warnings[userId] = 0;
 
 warnings[userId]++;
 
-const remaining =
-3 - warnings[userId];
-
 await deleteMessage(
 chatId,
 msg.message_id
 );
 
-if (
+if(
 warnings[userId] >= 3
-) {
+){
 
 await banUser(
 chatId,
@@ -941,14 +1109,11 @@ userId
 );
 
 await sendMessage(
-chatId,
-`
-🚫 ${username}
-removed from group.
 
-Reason:
-Abusive language
-`
+chatId,
+
+"User removed for abuse"
+
 );
 
 return res.sendStatus(200);
@@ -956,14 +1121,11 @@ return res.sendStatus(200);
 }
 
 await sendMessage(
-chatId,
-`
-⚠️ Warning:
-${warnings[userId]}/3
 
-Remaining:
-${remaining}
-`
+chatId,
+
+`Warning ${warnings[userId]}/3`
+
 );
 
 return res.sendStatus(200);
@@ -971,18 +1133,20 @@ return res.sendStatus(200);
 }
 
 // ====================================
-// LOCAL REPLY
+// SMART REPLY
 // ====================================
 
 const localReply =
 smartReply(text);
 
-if (localReply) {
+if(localReply){
 
 await sendMessage(
+
 chatId,
 localReply,
 msg.message_id
+
 );
 
 return res.sendStatus(200);
@@ -990,7 +1154,7 @@ return res.sendStatus(200);
 }
 
 // ====================================
-// AI
+// AI CHAT
 // ====================================
 
 await typing(chatId);
@@ -1002,17 +1166,19 @@ text
 );
 
 await sendMessage(
+
 chatId,
 aiReply,
 msg.message_id
+
 );
 
 return res.sendStatus(200);
 
-} catch (err) {
+}catch(err){
 
 console.log(
-"❌ Webhook Error:",
+"Webhook Error:",
 err.response?.data ||
 err.message
 );
@@ -1027,22 +1193,62 @@ return res.sendStatus(500);
 // HOME
 // ======================================
 
-app.get("/", (req, res) => {
+app.get("/",(req,res)=>{
 
 res.send(
-"🚀 Supreme Bot Running"
+"Supreme Bot Running"
 );
 
 });
 
 // ======================================
+// CLEAN OLD ROOMS
+// ======================================
+
+setInterval(()=>{
+
+const now =
+Date.now();
+
+for(
+const groupId
+in gameRooms
+){
+
+for(
+const roomId
+in gameRooms[groupId]
+){
+
+const room =
+gameRooms[groupId][roomId];
+
+if(
+
+now - room.createdAt >
+
+1000 * 60 * 10
+
+){
+
+delete gameRooms[groupId][roomId];
+
+}
+
+}
+
+}
+
+},60000);
+
+// ======================================
 // START SERVER
 // ======================================
 
-app.listen(PORT, () => {
+server.listen(PORT,()=>{
 
 console.log(
-"🚀 Supreme Bot Started"
+"Server Started"
 );
 
 });
