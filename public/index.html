@@ -1,0 +1,1046 @@
+package.json
+
+{
+  "name": "supreme-telegram-game-bot",
+  "version": "1.0.0",
+  "description": "Telegram Mini App Multiplayer Voice Game",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}
+
+
+---
+
+public/index.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
+/>
+
+<title>Strategy Line Pro</title>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+
+--bg:#050816;
+--card:#0f172a;
+--primary:#2563eb;
+--green:#22c55e;
+--red:#ef4444;
+--text:#ffffff;
+--muted:#94a3b8;
+
+}
+
+*{
+
+margin:0;
+padding:0;
+box-sizing:border-box;
+-webkit-tap-highlight-color:transparent;
+user-select:none;
+
+}
+
+html,body{
+
+width:100%;
+height:100%;
+overflow:hidden;
+font-family:'Inter',sans-serif;
+
+background:
+radial-gradient(circle at top,#10214d 0%,#050816 60%);
+
+color:white;
+
+}
+
+body{
+
+display:flex;
+justify-content:center;
+align-items:center;
+padding:14px;
+
+}
+
+.container{
+
+width:100%;
+max-width:430px;
+
+background:
+linear-gradient(
+180deg,
+#0f172a,
+#0b1222
+);
+
+border-radius:28px;
+
+padding:20px;
+
+border:1px solid rgba(255,255,255,.06);
+
+box-shadow:
+0 20px 60px rgba(0,0,0,.6),
+0 0 30px rgba(37,99,235,.15);
+
+}
+
+.logo{
+
+text-align:center;
+margin-bottom:18px;
+
+}
+
+.logo h1{
+
+font-family:'Orbitron',sans-serif;
+font-size:28px;
+letter-spacing:2px;
+
+}
+
+.logo p{
+
+margin-top:6px;
+color:#94a3b8;
+font-size:13px;
+
+}
+
+.status{
+
+padding:14px;
+border-radius:18px;
+font-weight:700;
+text-align:center;
+margin-bottom:18px;
+
+background:rgba(37,99,235,.15);
+border:1px solid rgba(37,99,235,.3);
+
+}
+
+.board-wrap{
+
+background:#07101f;
+border-radius:24px;
+padding:12px;
+
+}
+
+.board{
+
+width:100%;
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+
+}
+
+.cell{
+
+aspect-ratio:1;
+
+background:#162235;
+
+border-radius:18px;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+font-size:42px;
+font-weight:800;
+
+cursor:pointer;
+
+transition:.15s;
+
+border:1px solid rgba(255,255,255,.05);
+
+}
+
+.cell:active{
+
+transform:scale(.95);
+
+}
+
+.cell.x{
+
+color:var(--green);
+
+}
+
+.cell.o{
+
+color:var(--red);
+
+}
+
+.controls{
+
+margin-top:18px;
+
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+
+}
+
+.btn{
+
+padding:14px;
+border:none;
+border-radius:16px;
+font-weight:700;
+cursor:pointer;
+font-size:14px;
+
+}
+
+.primary{
+
+background:var(--primary);
+color:white;
+
+}
+
+.secondary{
+
+background:#1e293b;
+color:white;
+
+}
+
+.bottom{
+
+margin-top:16px;
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+}
+
+.phase{
+
+font-size:13px;
+color:#94a3b8;
+
+}
+
+.quit{
+
+padding:10px 16px;
+border:none;
+border-radius:14px;
+background:#2a1010;
+color:#ffb4b4;
+font-weight:700;
+cursor:pointer;
+
+}
+
+.popup{
+
+position:fixed;
+inset:0;
+
+background:rgba(0,0,0,.7);
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+z-index:999;
+
+}
+
+.popup-card{
+
+width:90%;
+max-width:320px;
+
+background:#0f172a;
+
+padding:28px;
+
+border-radius:24px;
+
+text-align:center;
+
+}
+
+.popup-title{
+
+font-size:24px;
+font-weight:800;
+margin-bottom:10px;
+
+}
+
+.popup-text{
+
+color:#94a3b8;
+margin-bottom:22px;
+
+}
+
+.popup-btn{
+
+width:100%;
+padding:15px;
+border:none;
+border-radius:14px;
+background:#2563eb;
+color:white;
+font-weight:700;
+cursor:pointer;
+
+}
+
+.speaking{
+
+animation:pulse 1s infinite;
+
+}
+
+@keyframes pulse{
+
+0%{
+box-shadow:0 0 0 0 rgba(37,99,235,.6);
+}
+
+70%{
+box-shadow:0 0 0 15px rgba(37,99,235,0);
+}
+
+100%{
+box-shadow:0 0 0 0 rgba(37,99,235,0);
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="logo">
+
+<h1>STRATEGY LINE</h1>
+
+<p>Realtime Multiplayer Voice Game</p>
+
+</div>
+
+<div
+id="status"
+class="status">
+
+Connecting...
+
+</div>
+
+<div class="board-wrap">
+
+<div
+id="board"
+class="board">
+</div>
+
+</div>
+
+<div class="controls">
+
+<button
+id="micBtn"
+class="btn primary">
+
+MIC ON
+
+</button>
+
+<button
+id="speakerBtn"
+class="btn secondary">
+
+SPEAKER ON
+
+</button>
+
+</div>
+
+<div class="bottom">
+
+<div
+id="phase"
+class="phase">
+
+Waiting...
+
+</div>
+
+<button
+class="quit"
+onclick="location.reload()">
+
+QUIT
+
+</button>
+
+</div>
+
+</div>
+
+<audio
+id="remoteAudio"
+autoplay
+playsinline>
+</audio>
+
+<script>
+
+/* =====================================
+URL PARAMS
+===================================== */
+
+const params =
+new URLSearchParams(
+location.search
+);
+
+const roomId =
+params.get("room");
+
+const player =
+params.get("player");
+
+const groupId =
+params.get("group");
+
+if(
+!roomId ||
+!player ||
+!groupId
+){
+
+document.body.innerHTML =
+"Invalid URL";
+
+throw new Error(
+"Invalid URL"
+);
+
+}
+
+/* =====================================
+SOCKET
+===================================== */
+
+const socket = io();
+
+/* =====================================
+DOM
+===================================== */
+
+const boardEl =
+document.getElementById(
+'board'
+);
+
+const statusEl =
+document.getElementById(
+'status'
+);
+
+const phaseEl =
+document.getElementById(
+'phase'
+);
+
+const micBtn =
+document.getElementById(
+'micBtn'
+);
+
+const speakerBtn =
+document.getElementById(
+'speakerBtn'
+);
+
+const remoteAudio =
+document.getElementById(
+'remoteAudio'
+);
+
+/* =====================================
+STATE
+===================================== */
+
+let board =
+Array(9).fill("");
+
+let turn = "x";
+
+let gameOver = false;
+
+let localStream;
+
+let peer;
+
+let micEnabled = true;
+let speakerEnabled = true;
+
+const mySymbol =
+player === "p1"
+? "x"
+: "o";
+
+/* =====================================
+WIN
+===================================== */
+
+const wins = [
+
+[0,1,2],
+[3,4,5],
+[6,7,8],
+
+[0,3,6],
+[1,4,7],
+[2,5,8],
+
+[0,4,8],
+[2,4,6]
+
+];
+
+/* =====================================
+POPUP
+===================================== */
+
+function popup(
+title,
+text
+){
+
+const div =
+document.createElement(
+'div'
+);
+
+div.className = 'popup';
+
+div.innerHTML = `
+
+<div class="popup-card">
+
+<div class="popup-title">
+${title}
+</div>
+
+<div class="popup-text">
+${text}
+</div>
+
+<button class="popup-btn">
+OK
+</button>
+
+</div>
+
+`;
+
+document.body.appendChild(
+div
+);
+
+div.querySelector(
+'button'
+).onclick = ()=>{
+
+div.remove();
+
+};
+
+}
+
+/* =====================================
+STATUS
+===================================== */
+
+function setStatus(text){
+
+statusEl.innerText =
+text;
+
+}
+
+/* =====================================
+RENDER
+===================================== */
+
+function render(){
+
+boardEl.innerHTML = "";
+
+board.forEach((v,i)=>{
+
+const cell =
+document.createElement(
+'div'
+);
+
+cell.className =
+`cell ${v}`;
+
+cell.innerText =
+v.toUpperCase();
+
+cell.onclick =
+()=>tap(i);
+
+boardEl.appendChild(
+cell
+);
+
+});
+
+}
+
+/* =====================================
+CHECK WIN
+===================================== */
+
+function checkWinner(){
+
+for(const w of wins){
+
+const[a,b,c] = w;
+
+if(
+
+board[a] &&
+board[a] === board[b] &&
+board[a] === board[c]
+
+){
+
+gameOver = true;
+
+setStatus(
+`${board[a].toUpperCase()} WON`
+);
+
+popup(
+"GAME OVER",
+`${board[a].toUpperCase()} WON`
+);
+
+}
+
+}
+
+}
+
+/* =====================================
+MOVE
+===================================== */
+
+function tap(i){
+
+if(gameOver) return;
+
+if(board[i]) return;
+
+if(turn !== mySymbol)
+return;
+
+navigator.vibrate?.(30);
+
+board[i] = mySymbol;
+
+turn =
+turn === "x"
+? "o"
+: "x";
+
+render();
+
+checkWinner();
+
+socket.emit(
+"game-move",
+{
+roomId,
+groupId,
+board,
+turn
+}
+);
+
+}
+
+/* =====================================
+JOIN ROOM
+===================================== */
+
+socket.emit(
+"join-room",
+{
+roomId,
+groupId,
+player
+}
+);
+
+setStatus(
+"Waiting for opponent"
+);
+
+/* =====================================
+SOCKET EVENTS
+===================================== */
+
+socket.on(
+"player-joined",
+()=>{
+
+setStatus(
+"Connected"
+);
+
+startVoice();
+
+}
+);
+
+socket.on(
+"game-move",
+data=>{
+
+board = data.board;
+
+turn = data.turn;
+
+render();
+
+checkWinner();
+
+}
+);
+
+socket.on(
+"player-disconnected",
+()=>{
+
+setStatus(
+"Opponent disconnected"
+);
+
+popup(
+"Disconnected",
+"Opponent left"
+);
+
+}
+);
+
+socket.on(
+"invalid-room",
+()=>{
+
+popup(
+"Invalid Room",
+"Room not found"
+);
+
+}
+);
+
+/* =====================================
+VOICE CHAT
+===================================== */
+
+async function startVoice(){
+
+try{
+
+localStream =
+await navigator
+.mediaDevices
+.getUserMedia({
+
+audio:{
+echoCancellation:true,
+noiseSuppression:true,
+autoGainControl:true
+}
+
+});
+
+peer =
+new RTCPeerConnection({
+
+iceServers:[
+
+{
+urls:
+"stun:stun.l.google.com:19302"
+}
+
+]
+
+});
+
+localStream
+.getTracks()
+.forEach(track=>{
+
+peer.addTrack(
+track,
+localStream
+);
+
+});
+
+peer.ontrack =
+event=>{
+
+remoteAudio.srcObject =
+event.streams[0];
+
+speakerBtn.classList.add(
+'speaking'
+);
+
+};
+
+peer.onicecandidate =
+event=>{
+
+if(event.candidate){
+
+socket.emit(
+"voice-signal",
+{
+roomId,
+candidate:
+event.candidate
+}
+);
+
+}
+
+};
+
+if(player === "p1"){
+
+const offer =
+await peer.createOffer();
+
+await peer
+.setLocalDescription(
+offer
+);
+
+socket.emit(
+"voice-signal",
+{
+roomId,
+offer
+}
+);
+
+}
+
+}catch(err){
+
+popup(
+"Microphone Error",
+"Microphone access denied"
+);
+
+}
+
+}
+
+/* =====================================
+VOICE SIGNAL
+===================================== */
+
+socket.on(
+"voice-signal",
+async data=>{
+
+if(data.offer){
+
+await peer
+.setRemoteDescription(
+new RTCSessionDescription(
+data.offer
+)
+);
+
+const answer =
+await peer.createAnswer();
+
+await peer
+.setLocalDescription(
+answer
+);
+
+socket.emit(
+"voice-signal",
+{
+roomId,
+answer
+}
+);
+
+}
+
+if(data.answer){
+
+await peer
+.setRemoteDescription(
+new RTCSessionDescription(
+data.answer
+)
+);
+
+}
+
+if(data.candidate){
+
+try{
+
+await peer
+.addIceCandidate(
+new RTCIceCandidate(
+data.candidate
+)
+);
+
+}catch(e){}
+
+}
+
+}
+);
+
+/* =====================================
+MIC
+===================================== */
+
+micBtn.onclick = ()=>{
+
+if(!localStream)
+return;
+
+micEnabled =
+!micEnabled;
+
+localStream
+.getAudioTracks()
+.forEach(track=>{
+
+track.enabled =
+micEnabled;
+
+});
+
+micBtn.innerText =
+
+micEnabled
+? "MIC ON"
+: "MIC OFF";
+
+};
+
+/* =====================================
+SPEAKER
+===================================== */
+
+speakerBtn.onclick = ()=>{
+
+speakerEnabled =
+!speakerEnabled;
+
+remoteAudio.muted =
+!speakerEnabled;
+
+speakerBtn.innerText =
+
+speakerEnabled
+? "SPEAKER ON"
+: "SPEAKER OFF";
+
+};
+
+/* =====================================
+ONLINE OFFLINE
+===================================== */
+
+window.addEventListener(
+'offline',
+()=>{
+
+setStatus(
+"Offline"
+);
+
+}
+);
+
+window.addEventListener(
+'online',
+()=>{
+
+setStatus(
+"Online"
+);
+
+}
+);
+
+/* =====================================
+START
+===================================== */
+
+render();
+
+</script>
+
+</body>
+</html>
