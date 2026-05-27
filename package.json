@@ -1,15 +1,24 @@
 {
-  "name": "supreme-telegram-game-bot",
+  "name": "supreme-telegram-bot",
   "version": "1.0.0",
-  "description": "Telegram Mini App Multiplayer Voice Game",
+  "description": "AI Telegram Group Helper Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
+  "keywords": [
+    "telegram",
+    "bot",
+    "ai",
+    "firebase",
+    "group-helper"
+  ],
+  "author": "Easy Deplover",
+  "license": "MIT",
   "dependencies": {
     "axios": "^1.6.8",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "socket.io": "^4.7.5"
+    "firebase-admin": "^12.0.0",
+    "telegraf": "^4.16.3"
   }
 }
