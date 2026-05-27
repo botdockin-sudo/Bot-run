@@ -1,10 +1,8 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 
-<meta charset="UTF-8">
+<meta charset="UTF-8"/>
 
 <meta
 name="viewport"
@@ -26,7 +24,6 @@ content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=c
 --primary:#2563eb;
 --green:#22c55e;
 --red:#ef4444;
---text:#ffffff;
 --muted:#94a3b8;
 
 }
@@ -46,6 +43,7 @@ html,body{
 width:100%;
 height:100%;
 overflow:hidden;
+
 font-family:'Inter',sans-serif;
 
 background:
@@ -80,7 +78,7 @@ border-radius:28px;
 
 padding:20px;
 
-border:1px solid rgba(255,255,255,.06);
+border:1px solid rgba(255,255,255,.05);
 
 box-shadow:
 0 20px 60px rgba(0,0,0,.6),
@@ -106,8 +104,8 @@ letter-spacing:2px;
 .logo p{
 
 margin-top:6px;
-color:#94a3b8;
 font-size:13px;
+color:var(--muted);
 
 }
 
@@ -120,6 +118,7 @@ text-align:center;
 margin-bottom:18px;
 
 background:rgba(37,99,235,.15);
+
 border:1px solid rgba(37,99,235,.3);
 
 }
@@ -135,50 +134,93 @@ padding:12px;
 .board{
 
 width:100%;
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:10px;
+display:block;
+touch-action:none;
 
 }
 
-.cell{
+.line{
 
-aspect-ratio:1;
+stroke:#334155;
+stroke-width:4;
+stroke-linecap:round;
 
-background:#162235;
+}
 
-border-radius:18px;
+.node{
 
-display:flex;
-justify-content:center;
-align-items:center;
-
-font-size:42px;
-font-weight:800;
-
-cursor:pointer;
+fill:#162235;
+stroke:#334155;
+stroke-width:2;
 
 transition:.15s;
 
-border:1px solid rgba(255,255,255,.05);
+cursor:pointer;
 
 }
 
-.cell:active{
+.node:active{
 
-transform:scale(.95);
-
-}
-
-.cell.x{
-
-color:var(--green);
+transform:scale(.92);
 
 }
 
-.cell.o{
+.node.p1{
 
-color:var(--red);
+fill:var(--green);
+stroke:white;
+
+filter:
+drop-shadow(
+0 0 10px
+rgba(34,197,94,.7)
+);
+
+}
+
+.node.p2{
+
+fill:var(--red);
+stroke:white;
+
+filter:
+drop-shadow(
+0 0 10px
+rgba(239,68,68,.7)
+);
+
+}
+
+.node.selected{
+
+stroke:#facc15;
+stroke-width:5;
+
+}
+
+.hint{
+
+fill:#60a5fa;
+
+opacity:.55;
+
+animation:pulse 1s infinite;
+
+}
+
+@keyframes pulse{
+
+0%{
+opacity:.2;
+}
+
+50%{
+opacity:.8;
+}
+
+100%{
+opacity:.2;
+}
 
 }
 
@@ -195,17 +237,20 @@ gap:10px;
 .btn{
 
 padding:14px;
+
 border:none;
 border-radius:16px;
+
 font-weight:700;
 cursor:pointer;
+
 font-size:14px;
 
 }
 
 .primary{
 
-background:var(--primary);
+background:#2563eb;
 color:white;
 
 }
@@ -230,17 +275,20 @@ align-items:center;
 .phase{
 
 font-size:13px;
-color:#94a3b8;
+color:var(--muted);
 
 }
 
 .quit{
 
 padding:10px 16px;
+
 border:none;
 border-radius:14px;
+
 background:#2a1010;
 color:#ffb4b4;
+
 font-weight:700;
 cursor:pointer;
 
@@ -286,7 +334,7 @@ margin-bottom:10px;
 
 .popup-text{
 
-color:#94a3b8;
+color:var(--muted);
 margin-bottom:22px;
 
 }
@@ -294,11 +342,15 @@ margin-bottom:22px;
 .popup-btn{
 
 width:100%;
+
 padding:15px;
+
 border:none;
 border-radius:14px;
+
 background:#2563eb;
 color:white;
+
 font-weight:700;
 cursor:pointer;
 
@@ -306,18 +358,18 @@ cursor:pointer;
 
 .speaking{
 
-animation:pulse 1s infinite;
+animation:speakingPulse 1s infinite;
 
 }
 
-@keyframes pulse{
+@keyframes speakingPulse{
 
 0%{
-box-shadow:0 0 0 0 rgba(37,99,235,.6);
+box-shadow:0 0 0 0 rgba(37,99,235,.7);
 }
 
 70%{
-box-shadow:0 0 0 15px rgba(37,99,235,0);
+box-shadow:0 0 0 18px rgba(37,99,235,0);
 }
 
 100%{
@@ -352,10 +404,24 @@ Connecting...
 
 <div class="board-wrap">
 
-<div
-id="board"
-class="board">
-</div>
+<svg
+class="board"
+viewBox="0 0 300 300">
+
+<line class="line" x1="50" y1="50" x2="250" y2="50"/>
+<line class="line" x1="50" y1="150" x2="250" y2="150"/>
+<line class="line" x1="50" y1="250" x2="250" y2="250"/>
+
+<line class="line" x1="50" y1="50" x2="50" y2="250"/>
+<line class="line" x1="150" y1="50" x2="150" y2="250"/>
+<line class="line" x1="250" y1="50" x2="250" y2="250"/>
+
+<line class="line" x1="50" y1="50" x2="250" y2="250"/>
+<line class="line" x1="250" y1="50" x2="50" y2="250"/>
+
+<g id="nodes"></g>
+
+</svg>
 
 </div>
 
@@ -385,7 +451,7 @@ SPEAKER ON
 id="phase"
 class="phase">
 
-Waiting...
+Placing Phase
 
 </div>
 
@@ -410,7 +476,7 @@ playsinline>
 <script>
 
 /* =====================================
-URL PARAMS
+URL
 ===================================== */
 
 const params =
@@ -433,8 +499,31 @@ if(
 !groupId
 ){
 
-document.body.innerHTML =
-"Invalid URL";
+document.body.innerHTML = `
+
+<div style="
+
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+
+font-family:sans-serif;
+background:#050816;
+color:white;
+
+">
+
+<h1>STRATEGY LINE</h1>
+
+<p>
+Open from Telegram bot
+</p>
+
+</div>
+
+`;
 
 throw new Error(
 "Invalid URL"
@@ -452,14 +541,14 @@ const socket = io();
 DOM
 ===================================== */
 
-const boardEl =
-document.getElementById(
-'board'
-);
-
 const statusEl =
 document.getElementById(
 'status'
+);
+
+const nodesEl =
+document.getElementById(
+'nodes'
 );
 
 const phaseEl =
@@ -483,31 +572,40 @@ document.getElementById(
 );
 
 /* =====================================
-STATE
+GAME
 ===================================== */
 
-let board =
-Array(9).fill("");
+const positions = [
 
-let turn = "x";
+{x:50,y:50},
+{x:150,y:50},
+{x:250,y:50},
 
-let gameOver = false;
+{x:50,y:150},
+{x:150,y:150},
+{x:250,y:150},
 
-let localStream;
+{x:50,y:250},
+{x:150,y:250},
+{x:250,y:250}
 
-let peer;
+];
 
-let micEnabled = true;
-let speakerEnabled = true;
+const adj = {
 
-const mySymbol =
-player === "p1"
-? "x"
-: "o";
+0:[1,3,4],
+1:[0,2,4],
+2:[1,5,4],
 
-/* =====================================
-WIN
-===================================== */
+3:[0,4,6],
+4:[0,1,2,3,5,6,7,8],
+5:[2,4,8],
+
+6:[3,7,4],
+7:[6,8,4],
+8:[5,7,4]
+
+};
 
 const wins = [
 
@@ -525,8 +623,51 @@ const wins = [
 ];
 
 /* =====================================
-POPUP
+STATE
 ===================================== */
+
+let selected = null;
+
+let moveLock = false;
+
+let localStream;
+
+let peer;
+
+let micEnabled = true;
+
+let speakerEnabled = true;
+
+const myRole = player;
+
+const state = {
+
+board:Array(9).fill(null),
+
+turn:'p1',
+
+phase:'placing',
+
+p1P:0,
+p2P:0,
+
+winner:null,
+
+active:false
+
+};
+
+/* =====================================
+HELPERS
+===================================== */
+
+function deep(obj){
+
+return JSON.parse(
+JSON.stringify(obj)
+);
+
+}
 
 function popup(
 title,
@@ -574,14 +715,26 @@ div.remove();
 
 }
 
-/* =====================================
-STATUS
-===================================== */
-
 function setStatus(text){
 
 statusEl.innerText =
 text;
+
+}
+
+function validateState(s){
+
+if(!s) return false;
+
+if(
+!Array.isArray(s.board)
+)return false;
+
+if(
+s.board.length !== 9
+)return false;
+
+return true;
 
 }
 
@@ -591,37 +744,170 @@ RENDER
 
 function render(){
 
-boardEl.innerHTML = "";
+const frag =
+document.createDocumentFragment();
 
-board.forEach((v,i)=>{
+for(
+let i=0;
+i<positions.length;
+i++
+){
 
-const cell =
-document.createElement(
-'div'
+const p =
+positions[i];
+
+const node =
+document.createElementNS(
+"http://www.w3.org/2000/svg",
+"circle"
 );
 
-cell.className =
-`cell ${v}`;
-
-cell.innerText =
-v.toUpperCase();
-
-cell.onclick =
-()=>tap(i);
-
-boardEl.appendChild(
-cell
+node.setAttribute(
+'cx',
+p.x
 );
 
-});
+node.setAttribute(
+'cy',
+p.y
+);
+
+node.setAttribute(
+'r',
+15
+);
+
+node.classList.add(
+'node'
+);
+
+if(
+state.board[i]
+){
+
+node.classList.add(
+state.board[i]
+);
+
+}
+
+if(
+selected === i
+){
+
+node.classList.add(
+'selected'
+);
+
+}
+
+node.addEventListener(
+
+'pointerdown',
+
+()=>tap(i),
+
+{passive:true}
+
+);
+
+frag.appendChild(
+node
+);
+
+if(
+
+selected !== null &&
+
+!state.board[i] &&
+
+adj[selected]
+.includes(i)
+
+){
+
+const hint =
+document.createElementNS(
+"http://www.w3.org/2000/svg",
+"circle"
+);
+
+hint.setAttribute(
+'cx',
+p.x
+);
+
+hint.setAttribute(
+'cy',
+p.y
+);
+
+hint.setAttribute(
+'r',
+7
+);
+
+hint.classList.add(
+'hint'
+);
+
+hint.addEventListener(
+
+'pointerdown',
+
+()=>tap(i),
+
+{passive:true}
+
+);
+
+frag.appendChild(
+hint
+);
+
+}
+
+}
+
+nodesEl.replaceChildren(
+frag
+);
+
+if(state.winner){
+
+setStatus(
+
+state.winner === myRole
+? "YOU WON"
+: "YOU LOST"
+
+);
+
+}else{
+
+setStatus(
+
+state.turn === myRole
+? "YOUR TURN"
+: "WAITING FOR OPPONENT"
+
+);
+
+}
+
+phaseEl.innerText =
+
+state.phase === 'placing'
+? "Placing Phase"
+: "Moving Phase";
 
 }
 
 /* =====================================
-CHECK WIN
+WIN
 ===================================== */
 
-function checkWinner(){
+function checkWin(){
 
 for(const w of wins){
 
@@ -629,22 +915,18 @@ const[a,b,c] = w;
 
 if(
 
-board[a] &&
-board[a] === board[b] &&
-board[a] === board[c]
+state.board[a] &&
+
+state.board[a] ===
+state.board[b] &&
+
+state.board[a] ===
+state.board[c]
 
 ){
 
-gameOver = true;
-
-setStatus(
-`${board[a].toUpperCase()} WON`
-);
-
-popup(
-"GAME OVER",
-`${board[a].toUpperCase()} WON`
-);
+state.winner =
+state.board[a];
 
 }
 
@@ -658,65 +940,178 @@ MOVE
 
 function tap(i){
 
-if(gameOver) return;
+if(moveLock) return;
 
-if(board[i]) return;
-
-if(turn !== mySymbol)
+if(!state.active)
 return;
 
-navigator.vibrate?.(30);
+if(state.turn !== myRole)
+return;
 
-board[i] = mySymbol;
+if(state.winner)
+return;
 
-turn =
-turn === "x"
-? "o"
-: "x";
+moveLock = true;
+
+setTimeout(()=>{
+
+moveLock = false;
+
+},160);
+
+navigator.vibrate?.(25);
+
+/* placing */
+
+if(
+state.phase === 'placing'
+){
+
+if(state.board[i])
+return;
+
+state.board[i] =
+myRole;
+
+if(myRole === 'p1'){
+state.p1P++;
+}else{
+state.p2P++;
+}
+
+if(
+state.p1P === 3 &&
+state.p2P === 3
+){
+
+state.phase =
+'moving';
+
+}
+
+checkWin();
+
+if(!state.winner){
+
+state.turn =
+
+state.turn === 'p1'
+? 'p2'
+: 'p1';
+
+}
+
+sync();
 
 render();
 
-checkWinner();
+return;
+
+}
+
+/* moving */
+
+if(
+state.board[i] === myRole
+){
+
+selected =
+
+selected === i
+? null
+: i;
+
+render();
+
+return;
+
+}
+
+if(selected !== null){
+
+if(
+
+!state.board[i] &&
+
+adj[selected]
+.includes(i)
+
+){
+
+state.board[i] =
+myRole;
+
+state.board[selected] =
+null;
+
+selected = null;
+
+checkWin();
+
+if(!state.winner){
+
+state.turn =
+
+state.turn === 'p1'
+? 'p2'
+: 'p1';
+
+}
+
+sync();
+
+render();
+
+}
+
+}
+
+}
+
+/* =====================================
+SYNC
+===================================== */
+
+function sync(){
 
 socket.emit(
 "game-move",
 {
+
 roomId,
 groupId,
-board,
-turn
+
+state:
+deep(state)
+
 }
 );
 
 }
 
 /* =====================================
-JOIN ROOM
+SOCKET
 ===================================== */
 
 socket.emit(
 "join-room",
 {
+
 roomId,
 groupId,
 player
+
 }
 );
-
-setStatus(
-"Waiting for opponent"
-);
-
-/* =====================================
-SOCKET EVENTS
-===================================== */
 
 socket.on(
 "player-joined",
 ()=>{
 
+state.active = true;
+
 setStatus(
-"Connected"
+"CONNECTED"
 );
 
 startVoice();
@@ -728,13 +1123,32 @@ socket.on(
 "game-move",
 data=>{
 
-board = data.board;
+if(
+!validateState(
+data.state
+)
+)return;
 
-turn = data.turn;
+Object.assign(
+state,
+deep(data.state)
+);
 
 render();
 
-checkWinner();
+if(state.winner){
+
+popup(
+
+state.winner === myRole
+? "YOU WON"
+: "YOU LOST",
+
+"Game finished"
+
+);
+
+}
 
 }
 );
@@ -744,7 +1158,7 @@ socket.on(
 ()=>{
 
 setStatus(
-"Opponent disconnected"
+"OPPONENT DISCONNECTED"
 );
 
 popup(
@@ -768,7 +1182,7 @@ popup(
 );
 
 /* =====================================
-VOICE CHAT
+VOICE
 ===================================== */
 
 async function startVoice(){
@@ -776,14 +1190,17 @@ async function startVoice(){
 try{
 
 localStream =
+
 await navigator
 .mediaDevices
 .getUserMedia({
 
 audio:{
+
 echoCancellation:true,
 noiseSuppression:true,
 autoGainControl:true
+
 }
 
 });
@@ -843,7 +1260,7 @@ event.candidate
 
 };
 
-if(player === "p1"){
+if(player === 'p1'){
 
 const offer =
 await peer.createOffer();
@@ -867,7 +1284,7 @@ offer
 
 popup(
 "Microphone Error",
-"Microphone access denied"
+"Microphone permission denied"
 );
 
 }
@@ -886,9 +1303,11 @@ if(data.offer){
 
 await peer
 .setRemoteDescription(
+
 new RTCSessionDescription(
 data.offer
 )
+
 );
 
 const answer =
@@ -913,9 +1332,11 @@ if(data.answer){
 
 await peer
 .setRemoteDescription(
+
 new RTCSessionDescription(
 data.answer
 )
+
 );
 
 }
@@ -926,9 +1347,11 @@ try{
 
 await peer
 .addIceCandidate(
+
 new RTCIceCandidate(
 data.candidate
 )
+
 );
 
 }catch(e){}
@@ -996,7 +1419,7 @@ window.addEventListener(
 ()=>{
 
 setStatus(
-"Offline"
+"OFFLINE"
 );
 
 }
@@ -1007,7 +1430,7 @@ window.addEventListener(
 ()=>{
 
 setStatus(
-"Online"
+"ONLINE"
 );
 
 }
