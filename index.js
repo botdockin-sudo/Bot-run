@@ -22,7 +22,8 @@ const {
   ref,
   set,
   update,
-  get
+  get,
+  remove
 } = require("firebase/database");
 
 const firebaseConfig = {
@@ -69,6 +70,29 @@ const OPENROUTER_API_KEY =
 process.env.OPENROUTER_API_KEY;
 
 // ======================================
+// EXPRESS PORT
+// ======================================
+
+app.get("/", (req, res) => {
+
+  res.send(
+    "🤖 Supreme Bot Running"
+  );
+
+});
+
+const PORT =
+process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+
+  console.log(
+    `🌐 Server running on ${PORT}`
+  );
+
+});
+
+// ======================================
 // MEMORY
 // ======================================
 
@@ -93,6 +117,43 @@ const models = [
 "qwen/qwen-2.5-7b-instruct:free"
 
 ];
+
+// ======================================
+// USERNAME FIX
+// ======================================
+
+function getUserName(user) {
+
+  if (
+    user.username &&
+    user.username !== ""
+  ) {
+
+    return `@${user.username}`;
+
+  }
+
+  if (
+    user.name &&
+    user.name !== ""
+  ) {
+
+    return user.name;
+
+  }
+
+  if (
+    user.first_name &&
+    user.first_name !== ""
+  ) {
+
+    return user.first_name;
+
+  }
+
+  return "Unknown User";
+
+}
 
 // ======================================
 // REPLY SYSTEM
@@ -270,12 +331,12 @@ async function saveUser(ctx) {
       id: userId,
 
       username:
-      ctx.from.username ||
-      "",
+      ctx.from.username || "",
 
       name:
       ctx.from.first_name ||
-      "User",
+      ctx.from.last_name ||
+      "Unknown User",
 
       lastMessage:
       Date.now(),
@@ -318,7 +379,7 @@ userId
 }
 
 // ======================================
-// WARN
+// WARNINGS
 // ======================================
 
 async function addWarning(
@@ -422,7 +483,7 @@ async function isAbusive(text) {
 }
 
 // ======================================
-// AI
+// AI SYSTEM
 // ======================================
 
 async function askAI(
@@ -533,6 +594,80 @@ message
 }
 
 // ======================================
+// AUTO MODERATION
+// ======================================
+
+bot.use(
+
+async (ctx, next) => {
+
+  if (
+    !ctx.message ||
+    !ctx.message.text
+  ) {
+
+    return next();
+
+  }
+
+  const text =
+  ctx.message.text;
+
+  if (
+    text.startsWith("/")
+  ) {
+
+    return next();
+
+  }
+
+  const bad =
+  await isAbusive(text);
+
+  if (!bad) {
+
+    return next();
+
+  }
+
+  const warnings =
+  await addWarning(
+    ctx.chat.id,
+    ctx.from.id
+  );
+
+  await ctx.deleteMessage();
+
+  if (
+    warnings >= 3
+  ) {
+
+    await ctx.telegram.banChatMember(
+      ctx.chat.id,
+      ctx.from.id
+    );
+
+    return replyMsg(
+      ctx,
+`
+🚫 ${getUserName(ctx.from)}
+removed
+`
+    );
+
+  }
+
+  return replyMsg(
+    ctx,
+`
+⚠️ Warning:
+${warnings}/3
+`
+  );
+
+}
+
+// ======================================
 // JOIN
 // ======================================
 
@@ -636,61 +771,6 @@ async (ctx, next) => {
   }
 
   next();
-
-});
-
-// ======================================
-// AUTO WARN
-// ======================================
-
-bot.on(
-"text",
-
-async (ctx, next) => {
-
-  const text =
-  ctx.message.text;
-
-  if (
-    text.startsWith("/")
-  ) {
-    return next();
-  }
-
-  const bad =
-  await isAbusive(text);
-
-  if (!bad)
-  return next();
-
-  const warnings =
-  await addWarning(
-    ctx.chat.id,
-    ctx.from.id
-  );
-
-  await ctx.deleteMessage();
-
-  if (
-    warnings >= 3
-  ) {
-
-    await ctx.telegram.banChatMember(
-      ctx.chat.id,
-      ctx.from.id
-    );
-
-    return replyMsg(
-      ctx,
-      `🚫 @${ctx.from.username} removed`
-    );
-
-  }
-
-  replyMsg(
-    ctx,
-    `⚠️ Warning ${warnings}/3`
-  );
 
 });
 
@@ -929,11 +1009,7 @@ async (ctx) => {
       found = true;
 
       text +=
-      `${
-        user.username
-        ? `@${user.username}`
-        : user.name
-      }\n`;
+      `${getUserName(user)}\n`;
 
     }
 
@@ -950,6 +1026,43 @@ async (ctx) => {
 
   text +=
   "\n📢 Jaldi active ho jao 😂";
+
+  replyMsg(ctx, text);
+
+});
+
+// ======================================
+// ALL ACTIVE
+// ======================================
+
+bot.command(
+"allactive",
+
+async (ctx) => {
+
+  const snap =
+  await get(
+    ref(
+      db,
+      `groups/${ctx.chat.id}/users`
+    )
+  );
+
+  const users =
+  snap.val() || {};
+
+  let text =
+  "📢 Summoning Users\n\n";
+
+  for (const id in users) {
+
+    text +=
+    `${getUserName(users[id])}\n`;
+
+  }
+
+  text +=
+  "\n🔥 Aao group me 😂";
 
   replyMsg(ctx, text);
 
@@ -994,6 +1107,27 @@ Use:
     Math.random() * 41
   ) + 60;
 
+  let mood = "";
+
+  if (percent >= 90) {
+
+    mood =
+    "💍 Perfect bond";
+
+  } else if (
+    percent >= 75
+  ) {
+
+    mood =
+    "🔥 Strong connection";
+
+  } else {
+
+    mood =
+    "😂 Chaotic duo";
+
+  }
+
   replyMsg(
     ctx,
 `
@@ -1005,6 +1139,394 @@ ${user2}
 
 📊 Compatibility:
 ${percent}%
+
+${mood}
+`
+  );
+
+});
+
+// ======================================
+// SCAN
+// ======================================
+
+bot.command(
+"scan",
+
+(ctx) => {
+
+  const iq =
+  Math.floor(
+    Math.random() * 200
+  );
+
+  const danger =
+  Math.floor(
+    Math.random() * 100
+  );
+
+  replyMsg(
+    ctx,
+`
+📡 USER SCAN
+
+👤 ${ctx.from.first_name}
+
+🧠 IQ:
+${iq}
+
+⚠️ Danger:
+${danger}%
+`
+  );
+
+});
+
+// ======================================
+// HISTORY
+// ======================================
+
+bot.command(
+"history",
+
+async (ctx) => {
+
+  const snap =
+  await get(
+    ref(
+      db,
+      `groups/${ctx.chat.id}/history`
+    )
+  );
+
+  const data =
+  snap.val();
+
+  if (!data) {
+
+    return replyMsg(
+      ctx,
+      "📜 No history yet 😴"
+    );
+
+  }
+
+  const arr =
+  Object.values(data)
+  .slice(-10)
+  .reverse();
+
+  let text =
+  "📜 Group History\n\n";
+
+  for (const item of arr) {
+
+    text +=
+    `${item.text}\n`;
+
+  }
+
+  replyMsg(ctx, text);
+
+});
+
+// ======================================
+// EVENT
+// ======================================
+
+bot.command(
+"event",
+
+(ctx) => {
+
+  bossHP = 100;
+
+  replyMsg(
+    ctx,
+`
+👹 Boss Event Started
+
+Boss HP:
+100
+
+Use:
+/hit
+`
+  );
+
+});
+
+// ======================================
+// HIT
+// ======================================
+
+bot.command(
+"hit",
+
+(ctx) => {
+
+  if (
+    bossHP <= 0
+  ) {
+
+    return replyMsg(
+      ctx,
+      "💀 Boss already defeated"
+    );
+
+  }
+
+  const damage =
+  Math.floor(
+    Math.random() * 25
+  ) + 1;
+
+  bossHP -= damage;
+
+  if (
+    bossHP <= 0
+  ) {
+
+    bossHP = 0;
+
+    return replyMsg(
+      ctx,
+`
+🏆 Boss defeated
+
+Final Hit:
+${damage}
+`
+    );
+
+  }
+
+  replyMsg(
+    ctx,
+`
+⚔️ Hit:
+${damage}
+
+👹 Boss HP:
+${bossHP}
+`
+  );
+
+});
+
+// ======================================
+// WARN
+// ======================================
+
+bot.command(
+"warn",
+
+async (ctx) => {
+
+  if (
+    !(await isAdmin(ctx))
+  ) {
+
+    return replyMsg(
+      ctx,
+      "❌ Admin only"
+    );
+
+  }
+
+  if (
+    !ctx.message.reply_to_message
+  ) {
+
+    return replyMsg(
+      ctx,
+      "❌ Reply user"
+    );
+
+  }
+
+  const target =
+  ctx.message.reply_to_message.from;
+
+  const warnings =
+  await addWarning(
+    ctx.chat.id,
+    target.id
+  );
+
+  replyMsg(
+    ctx,
+`
+⚠️ ${getUserName(target)}
+
+Warnings:
+${warnings}/3
+`
+  );
+
+});
+
+// ======================================
+// KICK
+// ======================================
+
+bot.command(
+"kick",
+
+async (ctx) => {
+
+  if (
+    !(await isAdmin(ctx))
+  ) {
+
+    return replyMsg(
+      ctx,
+      "❌ Admin only"
+    );
+
+  }
+
+  if (
+    !ctx.message.reply_to_message
+  ) {
+
+    return replyMsg(
+      ctx,
+      "❌ Reply user"
+    );
+
+  }
+
+  const target =
+  ctx.message.reply_to_message.from;
+
+  await ctx.telegram.banChatMember(
+    ctx.chat.id,
+    target.id
+  );
+
+  await ctx.telegram.unbanChatMember(
+    ctx.chat.id,
+    target.id
+  );
+
+  replyMsg(
+    ctx,
+`
+👢 ${getUserName(target)}
+kicked
+`
+  );
+
+});
+
+// ======================================
+// BAN
+// ======================================
+
+bot.command(
+"ban",
+
+async (ctx) => {
+
+  if (
+    !(await isAdmin(ctx))
+  ) {
+
+    return replyMsg(
+      ctx,
+      "❌ Admin only"
+    );
+
+  }
+
+  if (
+    !ctx.message.reply_to_message
+  ) {
+
+    return replyMsg(
+      ctx,
+      "❌ Reply user"
+    );
+
+  }
+
+  const target =
+  ctx.message.reply_to_message.from;
+
+  await ctx.telegram.banChatMember(
+    ctx.chat.id,
+    target.id
+  );
+
+  replyMsg(
+    ctx,
+`
+🚫 ${getUserName(target)}
+banned
+`
+  );
+
+});
+
+// ======================================
+// MUTE
+// ======================================
+
+bot.command(
+"mute",
+
+async (ctx) => {
+
+  if (
+    !(await isAdmin(ctx))
+  ) {
+
+    return replyMsg(
+      ctx,
+      "❌ Admin only"
+    );
+
+  }
+
+  if (
+    !ctx.message.reply_to_message
+  ) {
+
+    return replyMsg(
+      ctx,
+      "❌ Reply user"
+    );
+
+  }
+
+  const target =
+  ctx.message.reply_to_message.from;
+
+  await ctx.telegram.restrictChatMember(
+
+    ctx.chat.id,
+
+    target.id,
+
+    {
+
+      permissions: {
+
+        can_send_messages:
+        false
+
+      }
+
+    }
+
+  );
+
+  replyMsg(
+    ctx,
+`
+🔇 ${getUserName(target)}
+muted
 `
   );
 
@@ -1110,29 +1632,6 @@ setInterval(async () => {
   }
 
 }, 30000);
-
-// ======================================
-// EXPRESS
-// ======================================
-
-app.get("/", (req, res) => {
-
-  res.send(
-    "🤖 Supreme Bot Running"
-  );
-
-});
-
-const PORT =
-process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-
-  console.log(
-    `🌐 Server running on ${PORT}`
-  );
-
-});
 
 // ======================================
 // START BOT
