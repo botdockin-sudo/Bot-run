@@ -1,3 +1,8 @@
+// ======================================
+// SUPREME TELEGRAM BOT
+// FULL A2Z FIXED VERSION
+// ======================================
+
 require("dotenv").config();
 
 const express = require("express");
@@ -9,6 +14,25 @@ const axios = require("axios");
 // ======================================
 
 const app = express();
+
+app.get("/", (req, res) => {
+
+  res.send(
+    "🤖 Supreme Bot Running"
+  );
+
+});
+
+const PORT =
+process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+
+  console.log(
+    `🌐 Server running on ${PORT}`
+  );
+
+});
 
 // ======================================
 // FIREBASE
@@ -23,7 +47,7 @@ const {
   set,
   update,
   get,
-  remove
+  push
 } = require("firebase/database");
 
 const firebaseConfig = {
@@ -70,29 +94,6 @@ const OPENROUTER_API_KEY =
 process.env.OPENROUTER_API_KEY;
 
 // ======================================
-// EXPRESS PORT
-// ======================================
-
-app.get("/", (req, res) => {
-
-  res.send(
-    "🤖 Supreme Bot Running"
-  );
-
-});
-
-const PORT =
-process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-
-  console.log(
-    `🌐 Server running on ${PORT}`
-  );
-
-});
-
-// ======================================
 // MEMORY
 // ======================================
 
@@ -100,23 +101,11 @@ const memory = {};
 const cooldown = {};
 const sentToday = {};
 
-let bossHP = 100;
-
 // ======================================
-// MODELS
+// BOSS
 // ======================================
 
-const models = [
-
-"openai/gpt-oss-20b:free",
-
-"google/gemma-2-9b-it:free",
-
-"microsoft/phi-3-mini-128k-instruct:free",
-
-"qwen/qwen-2.5-7b-instruct:free"
-
-];
+const bossData = {};
 
 // ======================================
 // USERNAME FIX
@@ -156,7 +145,7 @@ function getUserName(user) {
 }
 
 // ======================================
-// REPLY SYSTEM
+// REPLY
 // ======================================
 
 async function replyMsg(
@@ -178,89 +167,105 @@ text
 }
 
 // ======================================
+// MODELS
+// ======================================
+
+const models = [
+
+"openai/gpt-oss-20b:free",
+
+"google/gemma-2-9b-it:free",
+
+"microsoft/phi-3-mini-128k-instruct:free",
+
+"qwen/qwen-2.5-7b-instruct:free"
+
+];
+
+// ======================================
 // COMMAND MENU
 // ======================================
 
 bot.telegram.setMyCommands([
 
 {
-  command: "search",
-  description: "AI search"
+command: "search",
+description: "AI search"
 },
 
 {
-  command: "mood",
-  description: "Group mood"
+command: "mood",
+description: "Group mood"
 },
 
 {
-  command: "level",
-  description: "XP level"
+command: "level",
+description: "XP level"
 },
 
 {
-  command: "funny",
-  description: "Funny reply"
+command: "funny",
+description: "Funny reply"
 },
 
 {
-  command: "call",
-  description: "Call users"
+command: "call",
+description: "Call users"
 },
 
 {
-  command: "inactive",
-  description: "Inactive users"
+command: "inactive",
+description: "Inactive users"
 },
 
 {
-  command: "allactive",
-  description: "Tag inactive users"
+command: "allactive",
+description: "Tag all users"
 },
 
 {
-  command: "scan",
-  description: "User scan"
+command: "scan",
+description: "User scan"
 },
 
 {
-  command: "history",
-  description: "Group history"
+command: "history",
+description: "Group history"
 },
 
 {
-  command: "match",
-  description: "User match"
+command: "match",
+description: "User match"
 },
 
 {
-  command: "event",
-  description: "Boss event"
+command: "event",
+description: "Boss event"
 },
 
 {
-  command: "hit",
-  description: "Attack boss"
+command: "hit",
+description: "Attack boss"
 },
 
 {
-  command: "warn",
-  description: "Warn user"
+command: "warn",
+description: "Warn user"
 },
 
 {
-  command: "kick",
-  description: "Kick user"
+command: "kick",
+description: "Kick user"
 },
 
 {
-  command: "ban",
-  description: "Ban user"
+command: "ban",
+description: "Ban user"
 },
 
 {
-  command: "mute",
-  description: "Mute user"
+command: "mute",
+description: "Mute user"
 }
 
 ]);
@@ -271,19 +276,17 @@ bot.telegram.setMyCommands([
 
 async function saveGroup(ctx) {
 
-  const chatId =
-  ctx.chat.id;
-
   await update(
 
     ref(
       db,
-      `groups/${chatId}/info`
+      `groups/${ctx.chat.id}/info`
     ),
 
     {
 
-      id: chatId,
+      id:
+      ctx.chat.id,
 
       title:
       ctx.chat.title ||
@@ -304,16 +307,10 @@ async function saveGroup(ctx) {
 
 async function saveUser(ctx) {
 
-  const chatId =
-  ctx.chat.id;
-
-  const userId =
-  ctx.from.id;
-
   const userRef =
   ref(
     db,
-    `groups/${chatId}/users/${userId}`
+    `groups/${ctx.chat.id}/users/${ctx.from.id}`
   );
 
   const snap =
@@ -328,7 +325,8 @@ async function saveUser(ctx) {
 
     {
 
-      id: userId,
+      id:
+      ctx.from.id,
 
       username:
       ctx.from.username || "",
@@ -473,7 +471,9 @@ async function isAbusive(text) {
     if (
       clean.includes(word)
     ) {
+
       return true;
+
     }
 
   }
@@ -483,7 +483,7 @@ async function isAbusive(text) {
 }
 
 // ======================================
-// AI SYSTEM
+// AI
 // ======================================
 
 async function askAI(
@@ -573,9 +573,20 @@ message
 
           );
 
-          return response.data
+          const reply =
+          response.data
           .choices[0]
           .message.content;
+
+          memory[userId].push({
+
+            role: "assistant",
+
+            content: reply
+
+          });
+
+          return reply;
 
         } catch (err) {}
 
@@ -665,7 +676,7 @@ ${warnings}/3
 `
   );
 
-}
+});
 
 // ======================================
 // JOIN
@@ -683,16 +694,18 @@ async (ctx) => {
     ctx.message.new_chat_members
   ) {
 
-    await set(
+    await push(
 
       ref(
         db,
-        `groups/${ctx.chat.id}/history/${Date.now()}`
+        `groups/${ctx.chat.id}/history`
       ),
 
       {
+
         text:
         `👤 ${user.first_name} joined`
+
       }
 
     );
@@ -719,16 +732,18 @@ bot.on(
 
 async (ctx) => {
 
-  await set(
+  await push(
 
     ref(
       db,
-      `groups/${ctx.chat.id}/history/${Date.now()}`
+      `groups/${ctx.chat.id}/history`
     ),
 
     {
+
       text:
       `💔 ${ctx.message.left_chat_member.first_name} left`
+
     }
 
   );
@@ -744,7 +759,7 @@ left the group 😔
 });
 
 // ======================================
-// SAVE USER AUTO
+// SAVE USERS
 // ======================================
 
 bot.on(
@@ -807,7 +822,10 @@ async (ctx) => {
     query
   );
 
-  replyMsg(ctx, reply);
+  replyMsg(
+    ctx,
+    reply
+  );
 
 });
 
@@ -1032,13 +1050,24 @@ async (ctx) => {
 });
 
 // ======================================
-// ALL ACTIVE
+// ALLACTIVE
 // ======================================
 
 bot.command(
 "allactive",
 
 async (ctx) => {
+
+  if (
+    !(await isAdmin(ctx))
+  ) {
+
+    return replyMsg(
+      ctx,
+      "❌ Admin only"
+    );
+
+  }
 
   const snap =
   await get(
@@ -1239,7 +1268,7 @@ bot.command(
 
 (ctx) => {
 
-  bossHP = 100;
+  bossData[ctx.chat.id] = 100;
 
   replyMsg(
     ctx,
@@ -1266,28 +1295,33 @@ bot.command(
 (ctx) => {
 
   if (
-    bossHP <= 0
+    !bossData[ctx.chat.id]
   ) {
 
     return replyMsg(
       ctx,
-      "💀 Boss already defeated"
+      "❌ Start /event first"
     );
 
   }
+
+  let hp =
+  bossData[ctx.chat.id];
 
   const damage =
   Math.floor(
     Math.random() * 25
   ) + 1;
 
-  bossHP -= damage;
+  hp -= damage;
+
+  bossData[ctx.chat.id] = hp;
 
   if (
-    bossHP <= 0
+    hp <= 0
   ) {
 
-    bossHP = 0;
+    bossData[ctx.chat.id] = 0;
 
     return replyMsg(
       ctx,
@@ -1308,7 +1342,7 @@ ${damage}
 ${damage}
 
 👹 Boss HP:
-${bossHP}
+${hp}
 `
   );
 
