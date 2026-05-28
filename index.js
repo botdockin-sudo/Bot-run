@@ -10,17 +10,12 @@ const axios = require("axios");
 
 const app = express();
 
-app.get("/", (req, res) => {
-  res.send("🤖 Supreme Bot Running");
-});
-
-const PORT = process.env.PORT || 3000;
-
 // ======================================
 // FIREBASE
 // ======================================
 
-const { initializeApp } = require("firebase/app");
+const { initializeApp } =
+require("firebase/app");
 
 const {
   getDatabase,
@@ -66,7 +61,9 @@ getDatabase(firebaseApp);
 // ======================================
 
 const bot =
-new Telegraf(process.env.BOT_TOKEN);
+new Telegraf(
+  process.env.BOT_TOKEN
+);
 
 const OPENROUTER_API_KEY =
 process.env.OPENROUTER_API_KEY;
@@ -77,6 +74,7 @@ process.env.OPENROUTER_API_KEY;
 
 const memory = {};
 const cooldown = {};
+const sentToday = {};
 
 let bossHP = 100;
 
@@ -97,42 +95,112 @@ const models = [
 ];
 
 // ======================================
+// REPLY SYSTEM
+// ======================================
+
+async function replyMsg(
+ctx,
+text
+) {
+
+  return ctx.reply(
+
+    text,
+
+    {
+      reply_to_message_id:
+      ctx.message.message_id
+    }
+
+  );
+
+}
+
+// ======================================
 // COMMAND MENU
 // ======================================
 
 bot.telegram.setMyCommands([
 
-{ command: "search", description: "AI search" },
+{
+  command: "search",
+  description: "AI search"
+},
 
-{ command: "mood", description: "Group mood" },
+{
+  command: "mood",
+  description: "Group mood"
+},
 
-{ command: "level", description: "User level" },
+{
+  command: "level",
+  description: "XP level"
+},
 
-{ command: "funny", description: "Funny reply" },
+{
+  command: "funny",
+  description: "Funny reply"
+},
 
-{ command: "call", description: "Call users" },
+{
+  command: "call",
+  description: "Call users"
+},
 
-{ command: "inactive", description: "Inactive users" },
+{
+  command: "inactive",
+  description: "Inactive users"
+},
 
-{ command: "allactive", description: "Tag inactive users" },
+{
+  command: "allactive",
+  description: "Tag inactive users"
+},
 
-{ command: "scan", description: "User scan" },
+{
+  command: "scan",
+  description: "User scan"
+},
 
-{ command: "history", description: "Group history" },
+{
+  command: "history",
+  description: "Group history"
+},
 
-{ command: "match", description: "Compatibility" },
+{
+  command: "match",
+  description: "User match"
+},
 
-{ command: "event", description: "Boss event" },
+{
+  command: "event",
+  description: "Boss event"
+},
 
-{ command: "hit", description: "Attack boss" },
+{
+  command: "hit",
+  description: "Attack boss"
+},
 
-{ command: "warn", description: "Warn user" },
+{
+  command: "warn",
+  description: "Warn user"
+},
 
-{ command: "kick", description: "Kick user" },
+{
+  command: "kick",
+  description: "Kick user"
+},
 
-{ command: "ban", description: "Ban user" },
+{
+  command: "ban",
+  description: "Ban user"
+},
 
-{ command: "mute", description: "Mute user" }
+{
+  command: "mute",
+  description: "Mute user"
+}
 
 ]);
 
@@ -203,7 +271,7 @@ async function saveUser(ctx) {
 
       username:
       ctx.from.username ||
-      "no_username",
+      "",
 
       name:
       ctx.from.first_name ||
@@ -250,7 +318,7 @@ userId
 }
 
 // ======================================
-// WARNING
+// WARN
 // ======================================
 
 async function addWarning(
@@ -304,7 +372,8 @@ async function isAdmin(ctx) {
   return admins.some(
 
     admin =>
-    admin.user.id === ctx.from.id
+    admin.user.id ===
+    ctx.from.id
 
   );
 
@@ -331,10 +400,8 @@ async function isAbusive(text) {
     "mc",
     "bc",
     "mkc",
-    "bhosdike",
     "gandu",
-    "gaand",
-    "randi",
+    "bhosdike",
     "fuck",
     "bitch"
 
@@ -384,7 +451,9 @@ message
     now;
 
     if (!memory[userId]) {
+
       memory[userId] = [];
+
     }
 
     memory[userId].push({
@@ -443,20 +512,9 @@ message
 
           );
 
-          const reply =
-          response.data
+          return response.data
           .choices[0]
           .message.content;
-
-          memory[userId].push({
-
-            role: "assistant",
-
-            content: reply
-
-          });
-
-          return reply;
 
         } catch (err) {}
 
@@ -490,13 +548,28 @@ async (ctx) => {
     ctx.message.new_chat_members
   ) {
 
-    ctx.reply(`
+    await set(
+
+      ref(
+        db,
+        `groups/${ctx.chat.id}/history/${Date.now()}`
+      ),
+
+      {
+        text:
+        `👤 ${user.first_name} joined`
+      }
+
+    );
+
+    replyMsg(
+      ctx,
+`
 🎉 Welcome ${user.first_name}
 
-🔥 Enjoy your stay
-😎 Chill and fun only
-😂 No spam please
-`);
+🔥 Enjoy your stay 😎
+`
+    );
 
   }
 
@@ -509,12 +582,29 @@ async (ctx) => {
 bot.on(
 "left_chat_member",
 
-(ctx) => {
+async (ctx) => {
 
-  ctx.reply(`
+  await set(
+
+    ref(
+      db,
+      `groups/${ctx.chat.id}/history/${Date.now()}`
+    ),
+
+    {
+      text:
+      `💔 ${ctx.message.left_chat_member.first_name} left`
+    }
+
+  );
+
+  replyMsg(
+    ctx,
+`
 💔 ${ctx.message.left_chat_member.first_name}
 left the group 😔
-`);
+`
+  );
 
 });
 
@@ -534,10 +624,16 @@ async (ctx, next) => {
 
   await saveUser(ctx);
 
-  await addXP(
-    ctx.chat.id,
-    ctx.from.id
-  );
+  if (
+    !ctx.message.text?.startsWith("/")
+  ) {
+
+    await addXP(
+      ctx.chat.id,
+      ctx.from.id
+    );
+
+  }
 
   next();
 
@@ -554,6 +650,12 @@ async (ctx, next) => {
 
   const text =
   ctx.message.text;
+
+  if (
+    text.startsWith("/")
+  ) {
+    return next();
+  }
 
   const bad =
   await isAbusive(text);
@@ -578,16 +680,17 @@ async (ctx, next) => {
       ctx.from.id
     );
 
-    return ctx.reply(`
-🚫 @${ctx.from.username}
-removed from group
-`);
+    return replyMsg(
+      ctx,
+      `🚫 @${ctx.from.username} removed`
+    );
 
   }
 
-  ctx.reply(`
-⚠️ Warning ${warnings}/3
-`);
+  replyMsg(
+    ctx,
+    `⚠️ Warning ${warnings}/3`
+  );
 
 });
 
@@ -607,7 +710,8 @@ async (ctx) => {
 
   if (!query) {
 
-    return ctx.reply(
+    return replyMsg(
+      ctx,
       "❌ Write something"
     );
 
@@ -623,7 +727,7 @@ async (ctx) => {
     query
   );
 
-  ctx.reply(reply);
+  replyMsg(ctx, reply);
 
 });
 
@@ -636,27 +740,40 @@ bot.command(
 
 (ctx) => {
 
-  const moods = [
+  const hour =
+  new Date().getHours();
 
-    "🔥 Group active hai",
+  let mood = "";
 
-    "😂 Meme energy high",
+  if (hour < 6) {
 
-    "💀 Chaos level dangerous",
+    mood =
+    "😴 Sleep mode";
 
-    "😴 Sab so rahe hai"
+  } else if (hour < 12) {
 
-  ];
+    mood =
+    "☀️ Morning vibes";
 
-  ctx.reply(
+  } else if (hour < 18) {
 
-    moods[
-      Math.floor(
-        Math.random() *
-        moods.length
-      )
-    ]
+    mood =
+    "🔥 Full active";
 
+  } else {
+
+    mood =
+    "🌙 Night chill";
+
+  }
+
+  replyMsg(
+    ctx,
+`
+🎭 Group Mood
+
+${mood}
+`
   );
 
 });
@@ -683,12 +800,15 @@ async (ctx) => {
   const xp =
   snap.val() || 0;
 
-  ctx.reply(`
+  replyMsg(
+    ctx,
+`
 👑 ${ctx.from.first_name}
 
 XP:
 ${xp}
-`);
+`
+  );
 
 });
 
@@ -703,23 +823,27 @@ bot.command(
 
   const lines = [
 
-    "😂 Tumhara WiFi bhi tumse fast bhaagta hai",
+    "😂 WiFi bhi tumse fast hai",
 
     "💀 NPC detected",
 
-    "🔥 Certified meme material"
+    "🔥 Meme machine",
+
+    "😭 System hang ho gaya"
 
   ];
 
-  ctx.reply(
+  const random =
+  lines[
+    Math.floor(
+      Math.random() *
+      lines.length
+    )
+  ];
 
-    lines[
-      Math.floor(
-        Math.random() *
-        lines.length
-      )
-    ]
-
+  replyMsg(
+    ctx,
+    random
   );
 
 });
@@ -733,12 +857,30 @@ bot.command(
 
 (ctx) => {
 
-  ctx.reply(`
-📢 Kaha ho bhai log 😭
+  const lines = [
 
-🔥 Aao group me
-maze karte hai 😎
-`);
+    "📢 Oye sab kaha mar gaye 😂",
+
+    "🔥 Group dead kyu hai 😭",
+
+    "😎 Aao bakchodi karte hai",
+
+    "👀 Admin checking activity"
+
+  ];
+
+  const random =
+  lines[
+    Math.floor(
+      Math.random() *
+      lines.length
+    )
+  ];
+
+  replyMsg(
+    ctx,
+    random
+  );
 
 });
 
@@ -749,43 +891,14 @@ maze karte hai 😎
 bot.command(
 "inactive",
 
-(ctx) => {
-
-  ctx.reply(`
-😴 Inactive users detected
-
-📢 Aao bhai log 😂
-`);
-
-});
-
-// ======================================
-// ALLACTIVE
-// ======================================
-
-bot.command(
-"allactive",
-
 async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-
-    return ctx.reply(
-      "❌ Admin only"
-    );
-
-  }
 
   const snap =
   await get(
-
     ref(
       db,
       `groups/${ctx.chat.id}/users`
     )
-
   );
 
   const users =
@@ -795,7 +908,9 @@ async (ctx) => {
   60 * 60 * 1000;
 
   let text =
-  "📢 Inactive users\n\n";
+  "😴 Inactive Users\n\n";
+
+  let found = false;
 
   for (const id in users) {
 
@@ -811,54 +926,32 @@ async (ctx) => {
 
     ) {
 
+      found = true;
+
       text +=
-      `@${user.username}\n`;
+      `${
+        user.username
+        ? `@${user.username}`
+        : user.name
+      }\n`;
 
     }
 
   }
 
+  if (!found) {
+
+    return replyMsg(
+      ctx,
+      "🔥 Sab active hai 😎"
+    );
+
+  }
+
   text +=
-  "\n🔥 Aao group me 😂";
+  "\n📢 Jaldi active ho jao 😂";
 
-  ctx.reply(text);
-
-});
-
-// ======================================
-// SCAN
-// ======================================
-
-bot.command(
-"scan",
-
-(ctx) => {
-
-  ctx.reply(`
-📡 User Scan
-
-👤 ${ctx.from.first_name}
-🔥 Energy: High
-😂 Meme Level: 92%
-`);
-
-});
-
-// ======================================
-// HISTORY
-// ======================================
-
-bot.command(
-"history",
-
-(ctx) => {
-
-  ctx.reply(`
-📜 Group History
-
-🔥 Meme war happened
-😂 Chaos detected
-`);
+  replyMsg(ctx, text);
 
 });
 
@@ -869,257 +962,50 @@ bot.command(
 bot.command(
 "match",
 
-(ctx) => {
+async (ctx) => {
+
+  const args =
+  ctx.message.text.split(" ");
+
+  if (
+    args.length < 3
+  ) {
+
+    return replyMsg(
+      ctx,
+`
+💘 Match System
+
+Use:
+/match @user1 @user2
+`
+    );
+
+  }
+
+  const user1 =
+  args[1];
+
+  const user2 =
+  args[2];
 
   const percent =
   Math.floor(
-    Math.random() * 100
-  );
+    Math.random() * 41
+  ) + 60;
 
-  ctx.reply(`
-💘 Compatibility:
+  replyMsg(
+    ctx,
+`
+💘 Match Result
+
+${user1}
+❤️
+${user2}
+
+📊 Compatibility:
 ${percent}%
-`);
-
-});
-
-// ======================================
-// EVENT
-// ======================================
-
-bot.command(
-"event",
-
-(ctx) => {
-
-  bossHP = 100;
-
-  ctx.reply(`
-👹 Boss Event Started
-
-Use:
-/hit
-`);
-
-});
-
-// ======================================
-// HIT
-// ======================================
-
-bot.command(
-"hit",
-
-(ctx) => {
-
-  const damage =
-  Math.floor(
-    Math.random() * 20
-  ) + 1;
-
-  bossHP -= damage;
-
-  if (bossHP <= 0) {
-
-    bossHP = 100;
-
-    return ctx.reply(`
-🏆 Boss defeated
-
-👑 Winner:
-${ctx.from.first_name}
-`);
-
-  }
-
-  ctx.reply(`
-⚔️ ${ctx.from.first_name}
-
-Damage:
-${damage}
-
-👹 Boss HP:
-${bossHP}
-`);
-
-});
-
-// ======================================
-// WARN
-// ======================================
-
-bot.command(
-"warn",
-
-async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-    return ctx.reply(
-      "❌ Admin only"
-    );
-  }
-
-  if (
-    !ctx.message.reply_to_message
-  ) {
-    return ctx.reply(
-      "❌ Reply to user"
-    );
-  }
-
-  const userId =
-  ctx.message
-  .reply_to_message
-  .from.id;
-
-  const warnings =
-  await addWarning(
-    ctx.chat.id,
-    userId
-  );
-
-  ctx.reply(`
-⚠️ Warning ${warnings}/3
-`);
-
-});
-
-// ======================================
-// KICK
-// ======================================
-
-bot.command(
-"kick",
-
-async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-    return ctx.reply(
-      "❌ Admin only"
-    );
-  }
-
-  if (
-    !ctx.message.reply_to_message
-  ) {
-    return ctx.reply(
-      "❌ Reply to user"
-    );
-  }
-
-  const userId =
-  ctx.message
-  .reply_to_message
-  .from.id;
-
-  await ctx.telegram.banChatMember(
-    ctx.chat.id,
-    userId
-  );
-
-  await ctx.telegram.unbanChatMember(
-    ctx.chat.id,
-    userId
-  );
-
-  ctx.reply(
-    "👢 User kicked"
-  );
-
-});
-
-// ======================================
-// BAN
-// ======================================
-
-bot.command(
-"ban",
-
-async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-    return ctx.reply(
-      "❌ Admin only"
-    );
-  }
-
-  if (
-    !ctx.message.reply_to_message
-  ) {
-    return ctx.reply(
-      "❌ Reply to user"
-    );
-  }
-
-  const userId =
-  ctx.message
-  .reply_to_message
-  .from.id;
-
-  await ctx.telegram.banChatMember(
-    ctx.chat.id,
-    userId
-  );
-
-  ctx.reply(
-    "🚫 User banned"
-  );
-
-});
-
-// ======================================
-// MUTE
-// ======================================
-
-bot.command(
-"mute",
-
-async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-    return ctx.reply(
-      "❌ Admin only"
-    );
-  }
-
-  if (
-    !ctx.message.reply_to_message
-  ) {
-    return ctx.reply(
-      "❌ Reply to user"
-    );
-  }
-
-  const userId =
-  ctx.message
-  .reply_to_message
-  .from.id;
-
-  await ctx.telegram.restrictChatMember(
-
-    ctx.chat.id,
-    userId,
-
-    {
-
-      permissions: {
-        can_send_messages: false
-      }
-
-    }
-
-  );
-
-  ctx.reply(
-    "🔇 User muted"
+`
   );
 
 });
@@ -1128,103 +1014,117 @@ async (ctx) => {
 // GOOD MORNING / NIGHT
 // ======================================
 
-const morningMessages = [
-
-"🌅 Good Morning legends 😎",
-
-"☀️ Utho bhai log 😂",
-
-"🔥 New day new bakchodi"
-
-];
-
-const nightMessages = [
-
-"🌃 Good Night dosto 😴",
-
-"🌙 Sleep mode ON",
-
-"💤 Kal fir maze karenge"
-
-];
-
 setInterval(async () => {
 
-  const now =
-  new Date();
+  try {
 
-  const hour =
-  now.getHours();
+    const indiaTime =
+    new Date().toLocaleString(
+      "en-US",
+      {
+        timeZone:
+        "Asia/Kolkata"
+      }
+    );
 
-  const minute =
-  now.getMinutes();
+    const now =
+    new Date(indiaTime);
 
-  const snap =
-  await get(
-    ref(db, "groups")
-  );
+    const hour =
+    now.getHours();
 
-  const groups =
-  snap.val();
+    const minute =
+    now.getMinutes();
 
-  if (!groups)
-  return;
+    const today =
+    now.toDateString();
 
-  for (const id in groups) {
+    const snap =
+    await get(
+      ref(db, "groups")
+    );
+
+    const groups =
+    snap.val() || {};
+
+    // GOOD MORNING
 
     if (
       hour === 6 &&
-      minute === 0
+      minute <= 5
     ) {
 
-      const msg =
-      morningMessages[
-        Math.floor(
-          Math.random() *
-          morningMessages.length
-        )
-      ];
+      for (const id in groups) {
 
-      await bot.telegram.sendMessage(
-        id,
-        msg
-      );
+        const key =
+        `${id}-gm-${today}`;
+
+        if (
+          sentToday[key]
+        ) continue;
+
+        sentToday[key] =
+        true;
+
+        await bot.telegram.sendMessage(
+          id,
+          "🌅 Good Morning legends 😎"
+        );
+
+      }
 
     }
+
+    // GOOD NIGHT
 
     if (
       hour === 17 &&
-      minute === 0
+      minute <= 5
     ) {
 
-      const msg =
-      nightMessages[
-        Math.floor(
-          Math.random() *
-          nightMessages.length
-        )
-      ];
+      for (const id in groups) {
 
-      await bot.telegram.sendMessage(
-        id,
-        msg
-      );
+        const key =
+        `${id}-gn-${today}`;
+
+        if (
+          sentToday[key]
+        ) continue;
+
+        sentToday[key] =
+        true;
+
+        await bot.telegram.sendMessage(
+          id,
+          "🌃 Good Night dosto 😴"
+        );
+
+      }
 
     }
 
+  } catch (err) {
+
+    console.log(err);
+
   }
 
-}, 60000);
+}, 30000);
 
 // ======================================
-// START
+// EXPRESS
 // ======================================
 
-bot.launch();
+app.get("/", (req, res) => {
 
-console.log(
-"🤖 Supreme Bot Running..."
-);
+  res.send(
+    "🤖 Supreme Bot Running"
+  );
+
+});
+
+const PORT =
+process.env.PORT || 3000;
 
 app.listen(PORT, () => {
 
@@ -1233,6 +1133,16 @@ app.listen(PORT, () => {
   );
 
 });
+
+// ======================================
+// START BOT
+// ======================================
+
+bot.launch();
+
+console.log(
+  "🤖 Bot Running..."
+);
 
 // ======================================
 // CRASH FIX
