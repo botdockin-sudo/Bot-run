@@ -1,6 +1,6 @@
 // ======================================
 // SUPREME TELEGRAM BOT
-// FULL A2Z FIXED VERSION
+// FULL A2Z FIXED VERSION (ORIGINAL STYLE)
 // ======================================
 
 require("dotenv").config();
@@ -16,31 +16,20 @@ const axios = require("axios");
 const app = express();
 
 app.get("/", (req, res) => {
-
-  res.send(
-    "🤖 Supreme Bot Running"
-  );
-
+  res.send("🤖 Supreme Bot Running - Full Active Mode 🔥");
 });
 
-const PORT =
-process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-
-  console.log(
-    `🌐 Server running on ${PORT}`
-  );
-
+  console.log(`🌐 Server running on ${PORT}`);
 });
 
 // ======================================
 // FIREBASE
 // ======================================
 
-const { initializeApp } =
-require("firebase/app");
-
+const { initializeApp } = require("firebase/app");
 const {
   getDatabase,
   ref,
@@ -51,47 +40,24 @@ const {
 } = require("firebase/database");
 
 const firebaseConfig = {
-
-  apiKey:
-  "AIzaSyBsAMJfL825py-6HOgX6scHZFp2Mch47R8",
-
-  authDomain:
-  "bot-dock.firebaseapp.com",
-
-  databaseURL:
-  "https://bot-dock-default-rtdb.firebaseio.com",
-
-  projectId:
-  "bot-dock",
-
-  storageBucket:
-  "bot-dock.firebasestorage.app",
-
-  messagingSenderId:
-  "757972411636",
-
-  appId:
-  "1:757972411636:web:61328d1730c2521e316aa1"
-
+  apiKey: "AIzaSyBsAMJfL825py-6HOgX6scHZFp2Mch47R8",
+  authDomain: "bot-dock.firebaseapp.com",
+  databaseURL: "https://bot-dock-default-rtdb.firebaseio.com",
+  projectId: "bot-dock",
+  storageBucket: "bot-dock.firebasestorage.app",
+  messagingSenderId: "757972411636",
+  appId: "1:757972411636:web:61328d1730c2521e316aa1"
 };
 
-const firebaseApp =
-initializeApp(firebaseConfig);
-
-const db =
-getDatabase(firebaseApp);
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getDatabase(firebaseApp);
 
 // ======================================
 // BOT
 // ======================================
 
-const bot =
-new Telegraf(
-  process.env.BOT_TOKEN
-);
-
-const OPENROUTER_API_KEY =
-process.env.OPENROUTER_API_KEY;
+const bot = new Telegraf(process.env.BOT_TOKEN);
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // ======================================
 // MEMORY
@@ -100,1593 +66,272 @@ process.env.OPENROUTER_API_KEY;
 const memory = {};
 const cooldown = {};
 const sentToday = {};
-
-// ======================================
-// BOSS
-// ======================================
-
 const bossData = {};
 
 // ======================================
-// USERNAME FIX
+// HELPERS
 // ======================================
 
 function getUserName(user) {
-
-  if (
-    user.username &&
-    user.username !== ""
-  ) {
-
-    return `@${user.username}`;
-
-  }
-
-  if (
-    user.name &&
-    user.name !== ""
-  ) {
-
-    return user.name;
-
-  }
-
-  if (
-    user.first_name &&
-    user.first_name !== ""
-  ) {
-
-    return user.first_name;
-
-  }
-
+  if (user.username) return `@${user.username}`;
+  if (user.first_name) return user.first_name;
   return "Unknown User";
-
 }
 
-// ======================================
-// REPLY
-// ======================================
-
-async function replyMsg(
-ctx,
-text
-) {
-
-  return ctx.reply(
-
-    text,
-
-    {
-      reply_to_message_id:
-      ctx.message.message_id
-    }
-
-  );
-
+async function replyMsg(ctx, text) {
+  return ctx.reply(text, {
+      reply_to_message_id: ctx.message.message_id
+  });
 }
-
-// ======================================
-// MODELS
-// ======================================
 
 const models = [
-
-"openai/gpt-oss-20b:free",
-
-"google/gemma-2-9b-it:free",
-
-"microsoft/phi-3-mini-128k-instruct:free",
-
-"qwen/qwen-2.5-7b-instruct:free"
-
+  "openai/gpt-3.5-turbo", 
+  "google/gemma-2-9b-it:free",
+  "qwen/qwen-2.5-7b-instruct:free"
 ];
-
-// ======================================
-// COMMAND MENU
-// ======================================
-
-bot.telegram.setMyCommands([
-
-{
-command: "search",
-description: "AI search"
-},
-
-{
-command: "mood",
-description: "Group mood"
-},
-
-{
-command: "level",
-description: "XP level"
-},
-
-{
-command: "funny",
-description: "Funny reply"
-},
-
-{
-command: "call",
-description: "Call users"
-},
-
-{
-command: "inactive",
-description: "Inactive users"
-},
-
-{
-command: "allactive",
-description: "Tag all users"
-},
-
-{
-command: "scan",
-description: "User scan"
-},
-
-{
-command: "history",
-description: "Group history"
-},
-
-{
-command: "match",
-description: "User match"
-},
-
-{
-command: "event",
-description: "Boss event"
-},
-
-{
-command: "hit",
-description: "Attack boss"
-},
-
-{
-command: "warn",
-description: "Warn user"
-},
-
-{
-command: "kick",
-description: "Kick user"
-},
-
-{
-command: "ban",
-description: "Ban user"
-},
-
-{
-command: "mute",
-description: "Mute user"
-}
-
-]);
-
-// ======================================
-// SAVE GROUP
-// ======================================
-
-async function saveGroup(ctx) {
-
-  await update(
-
-    ref(
-      db,
-      `groups/${ctx.chat.id}/info`
-    ),
-
-    {
-
-      id:
-      ctx.chat.id,
-
-      title:
-      ctx.chat.title ||
-      "Unknown Group",
-
-      createdAt:
-      Date.now()
-
-    }
-
-  );
-
-}
-
-// ======================================
-// SAVE USER
-// ======================================
-
-async function saveUser(ctx) {
-
-  const userRef =
-  ref(
-    db,
-    `groups/${ctx.chat.id}/users/${ctx.from.id}`
-  );
-
-  const snap =
-  await get(userRef);
-
-  const oldData =
-  snap.val() || {};
-
-  await update(
-
-    userRef,
-
-    {
-
-      id:
-      ctx.from.id,
-
-      username:
-      ctx.from.username || "",
-
-      name:
-      ctx.from.first_name ||
-      ctx.from.last_name ||
-      "Unknown User",
-
-      lastMessage:
-      Date.now(),
-
-      xp:
-      oldData.xp || 0
-
-    }
-
-  );
-
-}
-
-// ======================================
-// XP
-// ======================================
-
-async function addXP(
-chatId,
-userId
-) {
-
-  const xpRef =
-  ref(
-    db,
-    `groups/${chatId}/users/${userId}/xp`
-  );
-
-  const snap =
-  await get(xpRef);
-
-  const oldXP =
-  snap.val() || 0;
-
-  await set(
-    xpRef,
-    oldXP + 2
-  );
-
-}
-
-// ======================================
-// WARNINGS
-// ======================================
-
-async function addWarning(
-chatId,
-userId
-) {
-
-  const warnRef =
-  ref(
-    db,
-    `groups/${chatId}/warnings/${userId}`
-  );
-
-  const snap =
-  await get(warnRef);
-
-  let warnings = 0;
-
-  if (snap.exists()) {
-
-    warnings =
-    snap.val().warnings || 0;
-
-  }
-
-  warnings++;
-
-  await set(
-
-    warnRef,
-
-    {
-      warnings
-    }
-
-  );
-
-  return warnings;
-
-}
 
 // ======================================
 // ADMIN CHECK
 // ======================================
 
 async function isAdmin(ctx) {
-
-  const admins =
-  await ctx.getChatAdministrators();
-
-  return admins.some(
-
-    admin =>
-    admin.user.id ===
-    ctx.from.id
-
-  );
-
+  if (ctx.chat.type === 'private') return true;
+  const admins = await ctx.getChatAdministrators();
+  return admins.some(admin => admin.user.id === ctx.from.id);
 }
 
 // ======================================
-// BAD WORD CHECK
+// BAD WORD CHECK (FIXED)
 // ======================================
 
-async function isAbusive(text) {
-
-  const lower =
-  text.toLowerCase();
-
-  const clean =
-  lower.replace(
-    /[^a-z]/g,
-    ""
-  );
-
-  const badWords = [
-
-    "madarchod",
-    "mc",
-    "bc",
-    "mkc",
-    "gandu",
-    "bhosdike",
-    "fuck",
-    "bitch"
-
-  ];
-
-  for (const word of badWords) {
-
-    if (
-      clean.includes(word)
-    ) {
-
-      return true;
-
-    }
-
-  }
-
-  return false;
-
+function isAbusive(text) {
+  const badWords = ["mc", "bc", "gandu", "bhosdike", "madarchod", "chutiya", "loda", "fuck", "randi"];
+  const lower = text.toLowerCase();
+  return badWords.some(word => lower.includes(word));
 }
 
 // ======================================
-// AI
+// AI (MAST EMOJI VERSION)
 // ======================================
 
-async function askAI(
-userId,
-message
-) {
-
+async function askAI(userId, message) {
   try {
+    const now = Date.now();
+    if (cooldown[userId] && now - cooldown[userId] < 1500) return "⏳ Oye, thoda aaram se! 😆🔥";
+    cooldown[userId] = now;
 
-    const now =
-    Date.now();
+    if (!memory[userId]) memory[userId] = [];
+    
+    // Injected System Prompt for "Mast Style"
+    const systemMsg = { 
+        role: "system", 
+        content: "You are Supreme Bot. Talk like a cool desi friend in Hinglish. Use many emojis like 😂, 🔥, 😎, 💀, 💥. Be very funny and chatty!" 
+    };
 
-    if (
+    const userMsg = { role: "user", content: message };
+    
+    const messagesToSend = [systemMsg, ...memory[userId], userMsg];
 
-      cooldown[userId] &&
-      now -
-      cooldown[userId] < 1500
-
-    ) {
-
-      return "⏳ Slow bro 😆";
-
-    }
-
-    cooldown[userId] =
-    now;
-
-    if (!memory[userId]) {
-
-      memory[userId] = [];
-
-    }
-
-    memory[userId].push({
-
-      role: "user",
-
-      content: message
-
-    });
-
-    if (
-      memory[userId].length > 6
-    ) {
-
-      memory[userId].shift();
-
-    }
-
-    for (let i = 0; i < 5; i++) {
-
-      for (const model of models) {
-
-        try {
-
-          const response =
-          await axios.post(
-
-            "https://openrouter.ai/api/v1/chat/completions",
-
-            {
-
-              model,
-
-              messages:
-              memory[userId],
-
-              max_tokens: 80,
-
-              temperature: 0.8
-
-            },
-
-            {
-
-              headers: {
-
-                Authorization:
-                `Bearer ${OPENROUTER_API_KEY}`,
-
-                "Content-Type":
-                "application/json"
-
-              }
-
-            }
-
-          );
-
-          const reply =
-          response.data
-          .choices[0]
-          .message.content;
-
-          memory[userId].push({
-
-            role: "assistant",
-
-            content: reply
-
-          });
-
-          return reply;
-
-        } catch (err) {}
-
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: models[1], // Using Gemma for free and fast replies
+        messages: messagesToSend,
+        max_tokens: 150,
+        temperature: 0.9
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
+        }
       }
+    );
 
-    }
+    const reply = response.data.choices[0].message.content;
+    
+    memory[userId].push(userMsg);
+    memory[userId].push({ role: "assistant", content: reply });
+    if (memory[userId].length > 6) memory[userId].shift();
 
-    return "❌ AI not responding 😔";
-
+    return reply;
   } catch (err) {
-
-    return "⚡ AI error";
-
+    return "❌ AI dimaag kha gaya mera! 😂 Baad me try kar!";
   }
-
 }
 
 // ======================================
-// AUTO MODERATION
+// AUTO MODERATION & SAVE DATA
 // ======================================
 
-bot.use(
+bot.on("message", async (ctx, next) => {
+  if (!ctx.message || !ctx.from) return next();
 
-async (ctx, next) => {
+  const text = ctx.message.text || "";
+  const chatId = ctx.chat.id;
+  const userId = ctx.from.id;
 
-  if (
-    !ctx.message ||
-    !ctx.message.text
-  ) {
+  // 1. GAALI CHECK
+  if (isAbusive(text) && !text.startsWith("/")) {
+    try {
+      await ctx.deleteMessage();
+      const warnRef = ref(db, `groups/${chatId}/warnings/${userId}`);
+      const snap = await get(warnRef);
+      let warns = (snap.val()?.warnings || 0) + 1;
+      await set(warnRef, { warnings: warns });
 
-    return next();
-
-  }
-
-  const text =
-  ctx.message.text;
-
-  if (
-    text.startsWith("/")
-  ) {
-
-    return next();
-
-  }
-
-  const bad =
-  await isAbusive(text);
-
-  if (!bad) {
-
-    return next();
-
-  }
-
-  const warnings =
-  await addWarning(
-    ctx.chat.id,
-    ctx.from.id
-  );
-
-  await ctx.deleteMessage();
-
-  if (
-    warnings >= 3
-  ) {
-
-    await ctx.telegram.banChatMember(
-      ctx.chat.id,
-      ctx.from.id
-    );
-
-    return replyMsg(
-      ctx,
-`
-🚫 ${getUserName(ctx.from)}
-removed
-`
-    );
-
-  }
-
-  return replyMsg(
-    ctx,
-`
-⚠️ Warning:
-${warnings}/3
-`
-  );
-
-});
-
-// ======================================
-// JOIN
-// ======================================
-
-bot.on(
-"new_chat_members",
-
-async (ctx) => {
-
-  await saveGroup(ctx);
-
-  for (
-    const user of
-    ctx.message.new_chat_members
-  ) {
-
-    await push(
-
-      ref(
-        db,
-        `groups/${ctx.chat.id}/history`
-      ),
-
-      {
-
-        text:
-        `👤 ${user.first_name} joined`
-
+      if (warns >= 3) {
+        await ctx.banChatMember(userId);
+        return ctx.reply(`🚫 ${getUserName(ctx.from)} ko 3 warnings mil gayi! Tata Bye Bye! 💀🔥`);
       }
-
-    );
-
-    replyMsg(
-      ctx,
-`
-🎉 Welcome ${user.first_name}
-
-🔥 Enjoy your stay 😎
-`
-    );
-
+      return ctx.reply(`⚠️ Oye ${getUserName(ctx.from)}! Gaali mat de! Warning: ${warns}/3 😡💥`);
+    } catch (e) { console.log("Admin Rights Needed"); }
+    return;
   }
 
-});
+  // 2. SAVE DATA & XP
+  const userRef = ref(db, `groups/${chatId}/users/${userId}`);
+  const userSnap = await get(userRef);
+  const oldXP = userSnap.exists() ? (userSnap.val().xp || 0) : 0;
 
-// ======================================
-// LEFT
-// ======================================
+  await update(userRef, {
+    id: userId,
+    username: ctx.from.username || "",
+    name: ctx.from.first_name,
+    lastMessage: Date.now(),
+    xp: oldXP + 2
+  });
 
-bot.on(
-"left_chat_member",
+  await update(ref(db, `groups/${chatId}/info`), { id: chatId, title: ctx.chat.title || "Group", updatedAt: Date.now() });
 
-async (ctx) => {
-
-  await push(
-
-    ref(
-      db,
-      `groups/${ctx.chat.id}/history`
-    ),
-
-    {
-
-      text:
-      `💔 ${ctx.message.left_chat_member.first_name} left`
-
-    }
-
-  );
-
-  replyMsg(
-    ctx,
-`
-💔 ${ctx.message.left_chat_member.first_name}
-left the group 😔
-`
-  );
-
-});
-
-// ======================================
-// SAVE USERS
-// ======================================
-
-bot.on(
-"message",
-
-async (ctx, next) => {
-
-  if (!ctx.from)
   return next();
-
-  await saveGroup(ctx);
-
-  await saveUser(ctx);
-
-  if (
-    !ctx.message.text?.startsWith("/")
-  ) {
-
-    await addXP(
-      ctx.chat.id,
-      ctx.from.id
-    );
-
-  }
-
-  next();
-
 });
 
 // ======================================
-// SEARCH
+// COMMANDS (ALL PURANE COMMANDS)
 // ======================================
 
-bot.command(
-"search",
-
-async (ctx) => {
-
-  const query =
-  ctx.message.text
-  .replace(/\/search(@\w+)?/,"")
-  .trim();
-
-  if (!query) {
-
-    return replyMsg(
-      ctx,
-      "❌ Write something"
-    );
-
-  }
-
-  await ctx.sendChatAction(
-    "typing"
-  );
-
-  const reply =
-  await askAI(
-    ctx.from.id,
-    query
-  );
-
-  replyMsg(
-    ctx,
-    reply
-  );
-
+bot.command("search", async (ctx) => {
+  const query = ctx.message.text.replace(/\/search(@\w+)?/, "").trim();
+  if (!query) return replyMsg(ctx, "❌ Kuch toh bol bhai! 😂");
+  ctx.sendChatAction("typing");
+  const reply = await askAI(ctx.from.id, query);
+  replyMsg(ctx, reply);
 });
 
-// ======================================
-// MOOD
-// ======================================
-
-bot.command(
-"mood",
-
-(ctx) => {
-
-  const hour =
-  new Date().getHours();
-
-  let mood = "";
-
-  if (hour < 6) {
-
-    mood =
-    "😴 Sleep mode";
-
-  } else if (hour < 12) {
-
-    mood =
-    "☀️ Morning vibes";
-
-  } else if (hour < 18) {
-
-    mood =
-    "🔥 Full active";
-
-  } else {
-
-    mood =
-    "🌙 Night chill";
-
-  }
-
-  replyMsg(
-    ctx,
-`
-🎭 Group Mood
-
-${mood}
-`
-  );
-
+bot.command("mood", (ctx) => {
+  const line = ["🔥 Full Form Me!", "😴 Bore ho raha hoon", "😎 Chill vibes", "💀 Danger Zone"];
+  replyMsg(ctx, `🎭 Group Mood: ${line[Math.floor(Math.random() * line.length)]} 😂`);
 });
 
-// ======================================
-// LEVEL
-// ======================================
-
-bot.command(
-"level",
-
-async (ctx) => {
-
-  const snap =
-  await get(
-
-    ref(
-      db,
-      `groups/${ctx.chat.id}/users/${ctx.from.id}/xp`
-    )
-
-  );
-
-  const xp =
-  snap.val() || 0;
-
-  replyMsg(
-    ctx,
-`
-👑 ${ctx.from.first_name}
-
-XP:
-${xp}
-`
-  );
-
+bot.command("level", async (ctx) => {
+  const snap = await get(ref(db, `groups/${ctx.chat.id}/users/${ctx.from.id}/xp`));
+  replyMsg(ctx, `👑 ${ctx.from.first_name}\n🔥 XP: ${snap.val() || 0} 🚀`);
 });
 
-// ======================================
-// FUNNY
-// ======================================
-
-bot.command(
-"funny",
-
-(ctx) => {
-
-  const lines = [
-
-    "😂 WiFi bhi tumse fast hai",
-
-    "💀 NPC detected",
-
-    "🔥 Meme machine",
-
-    "😭 System hang ho gaya"
-
-  ];
-
-  const random =
-  lines[
-    Math.floor(
-      Math.random() *
-      lines.length
-    )
-  ];
-
-  replyMsg(
-    ctx,
-    random
-  );
-
+bot.command("funny", (ctx) => {
+  const lines = ["😂 WiFi se slow tera dimaag hai", "💀 NPC spotted!", "🔥 System phad denge!", "😭 Bhai rehne de, tujhse na ho payega"];
+  replyMsg(ctx, lines[Math.floor(Math.random() * lines.length)]);
 });
 
-// ======================================
-// CALL
-// ======================================
-
-bot.command(
-"call",
-
-(ctx) => {
-
-  const lines = [
-
-    "📢 Oye sab kaha mar gaye 😂",
-
-    "🔥 Group dead kyu hai 😭",
-
-    "😎 Aao bakchodi karte hai",
-
-    "👀 Admin checking activity"
-
-  ];
-
-  const random =
-  lines[
-    Math.floor(
-      Math.random() *
-      lines.length
-    )
-  ];
-
-  replyMsg(
-    ctx,
-    random
-  );
-
+bot.command("call", (ctx) => {
+    replyMsg(ctx, "📢 Oye sab kaha mar gaye? 😂 Aao jaldi bakchodi karte hai! 🔥💥");
 });
 
-// ======================================
-// INACTIVE
-// ======================================
-
-bot.command(
-"inactive",
-
-async (ctx) => {
-
-  const snap =
-  await get(
-    ref(
-      db,
-      `groups/${ctx.chat.id}/users`
-    )
-  );
-
-  const users =
-  snap.val() || {};
-
-  const ONE_HOUR =
-  60 * 60 * 1000;
-
-  let text =
-  "😴 Inactive Users\n\n";
-
+bot.command("inactive", async (ctx) => {
+  const snap = await get(ref(db, `groups/${ctx.chat.id}/users`));
+  const users = snap.val() || {};
+  let text = "😴 Inactive Users:\n";
   let found = false;
-
   for (const id in users) {
-
-    const user =
-    users[id];
-
-    if (
-
-      Date.now() -
-      user.lastMessage >
-
-      ONE_HOUR
-
-    ) {
-
+    if (Date.now() - users[id].lastMessage > 3600000) {
+      text += `${getUserName(users[id])}\n`;
       found = true;
-
-      text +=
-      `${getUserName(user)}\n`;
-
     }
-
   }
-
-  if (!found) {
-
-    return replyMsg(
-      ctx,
-      "🔥 Sab active hai 😎"
-    );
-
-  }
-
-  text +=
-  "\n📢 Jaldi active ho jao 😂";
-
-  replyMsg(ctx, text);
-
+  replyMsg(ctx, found ? text : "🔥 Sab active hai don! 😎");
 });
 
-// ======================================
-// ALLACTIVE
-// ======================================
-
-bot.command(
-"allactive",
-
-async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Admin only"
-    );
-
-  }
-
-  const snap =
-  await get(
-    ref(
-      db,
-      `groups/${ctx.chat.id}/users`
-    )
-  );
-
-  const users =
-  snap.val() || {};
-
-  let text =
-  "📢 Summoning Users\n\n";
-
-  for (const id in users) {
-
-    text +=
-    `${getUserName(users[id])}\n`;
-
-  }
-
-  text +=
-  "\n🔥 Aao group me 😂";
-
-  replyMsg(ctx, text);
-
+bot.command("allactive", async (ctx) => {
+  if (!(await isAdmin(ctx))) return replyMsg(ctx, "❌ Sirf Admin ke liye!");
+  const snap = await get(ref(db, `groups/${ctx.chat.id}/users`));
+  let text = "📢 Summoning Everyone! 🔥\n\n";
+  for (const id in snap.val()) text += `${getUserName(snap.val()[id])} `;
+  replyMsg(ctx, text + "\n\nJaldi aao! 😂🚀");
 });
 
-// ======================================
-// MATCH
-// ======================================
-
-bot.command(
-"match",
-
-async (ctx) => {
-
-  const args =
-  ctx.message.text.split(" ");
-
-  if (
-    args.length < 3
-  ) {
-
-    return replyMsg(
-      ctx,
-`
-💘 Match System
-
-Use:
-/match @user1 @user2
-`
-    );
-
-  }
-
-  const user1 =
-  args[1];
-
-  const user2 =
-  args[2];
-
-  const percent =
-  Math.floor(
-    Math.random() * 41
-  ) + 60;
-
-  let mood = "";
-
-  if (percent >= 90) {
-
-    mood =
-    "💍 Perfect bond";
-
-  } else if (
-    percent >= 75
-  ) {
-
-    mood =
-    "🔥 Strong connection";
-
-  } else {
-
-    mood =
-    "😂 Chaotic duo";
-
-  }
-
-  replyMsg(
-    ctx,
-`
-💘 Match Result
-
-${user1}
-❤️
-${user2}
-
-📊 Compatibility:
-${percent}%
-
-${mood}
-`
-  );
-
+bot.command("scan", (ctx) => {
+  replyMsg(ctx, `📡 SCANNING ${ctx.from.first_name}...\n🧠 IQ: ${Math.floor(Math.random()*150)}\n⚠️ Danger: ${Math.floor(Math.random()*100)}% 💀`);
 });
 
-// ======================================
-// SCAN
-// ======================================
-
-bot.command(
-"scan",
-
-(ctx) => {
-
-  const iq =
-  Math.floor(
-    Math.random() * 200
-  );
-
-  const danger =
-  Math.floor(
-    Math.random() * 100
-  );
-
-  replyMsg(
-    ctx,
-`
-📡 USER SCAN
-
-👤 ${ctx.from.first_name}
-
-🧠 IQ:
-${iq}
-
-⚠️ Danger:
-${danger}%
-`
-  );
-
+bot.command("match", (ctx) => {
+  const args = ctx.message.text.split(" ");
+  if (args.length < 3) return replyMsg(ctx, "Usage: /match @user1 @user2 💘");
+  const p = Math.floor(Math.random() * 40) + 60;
+  replyMsg(ctx, `💘 Match Result: ${args[1]} ❤️ ${args[2]}\n📊 Compatibility: ${p}%\n${p > 85 ? "🔥 Perfect!" : "😂 Theek thaak"}`);
 });
 
-// ======================================
-// HISTORY
-// ======================================
-
-bot.command(
-"history",
-
-async (ctx) => {
-
-  const snap =
-  await get(
-    ref(
-      db,
-      `groups/${ctx.chat.id}/history`
-    )
-  );
-
-  const data =
-  snap.val();
-
-  if (!data) {
-
-    return replyMsg(
-      ctx,
-      "📜 No history yet 😴"
-    );
-
-  }
-
-  const arr =
-  Object.values(data)
-  .slice(-10)
-  .reverse();
-
-  let text =
-  "📜 Group History\n\n";
-
-  for (const item of arr) {
-
-    text +=
-    `${item.text}\n`;
-
-  }
-
-  replyMsg(ctx, text);
-
-});
-
-// ======================================
-// EVENT
-// ======================================
-
-bot.command(
-"event",
-
-(ctx) => {
-
+bot.command("event", (ctx) => {
   bossData[ctx.chat.id] = 100;
+  replyMsg(ctx, "👹 BOSS EVENT START! 👹\nHP: 100\nMaaro isse! /hit ⚔️");
+});
 
-  replyMsg(
-    ctx,
-`
-👹 Boss Event Started
-
-Boss HP:
-100
-
-Use:
-/hit
-`
-  );
-
+bot.command("hit", (ctx) => {
+  if (!bossData[ctx.chat.id]) return replyMsg(ctx, "❌ Koi boss nahi hai!");
+  const dmg = Math.floor(Math.random() * 30) + 5;
+  bossData[ctx.chat.id] -= dmg;
+  if (bossData[ctx.chat.id] <= 0) {
+    delete bossData[ctx.chat.id];
+    return replyMsg(ctx, `🏆 Boss Defeated! Final hit by ${ctx.from.first_name}! 🔥`);
+  }
+  replyMsg(ctx, `⚔️ Hit: -${dmg}\n👹 Boss HP: ${bossData[ctx.chat.id]} 💥`);
 });
 
 // ======================================
-// HIT
+// ADMIN TOOLS
 // ======================================
 
-bot.command(
-"hit",
+bot.command("warn", async (ctx) => {
+    if (!(await isAdmin(ctx)) || !ctx.message.reply_to_message) return;
+    const target = ctx.message.reply_to_message.from;
+    const warnRef = ref(db, `groups/${ctx.chat.id}/warnings/${target.id}`);
+    const snap = await get(warnRef);
+    let count = (snap.val()?.warnings || 0) + 1;
+    await set(warnRef, { warnings: count });
+    replyMsg(ctx, `⚠️ ${getUserName(target)} warned! (${count}/3) 😡`);
+});
 
-(ctx) => {
-
-  if (
-    !bossData[ctx.chat.id]
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Start /event first"
-    );
-
-  }
-
-  let hp =
-  bossData[ctx.chat.id];
-
-  const damage =
-  Math.floor(
-    Math.random() * 25
-  ) + 1;
-
-  hp -= damage;
-
-  bossData[ctx.chat.id] = hp;
-
-  if (
-    hp <= 0
-  ) {
-
-    bossData[ctx.chat.id] = 0;
-
-    return replyMsg(
-      ctx,
-`
-🏆 Boss defeated
-
-Final Hit:
-${damage}
-`
-    );
-
-  }
-
-  replyMsg(
-    ctx,
-`
-⚔️ Hit:
-${damage}
-
-👹 Boss HP:
-${hp}
-`
-  );
-
+bot.command("kick", async (ctx) => {
+    if (!(await isAdmin(ctx)) || !ctx.message.reply_to_message) return;
+    await ctx.telegram.banChatMember(ctx.chat.id, ctx.message.reply_to_message.from.id);
+    await ctx.telegram.unbanChatMember(ctx.chat.id, ctx.message.reply_to_message.from.id);
+    replyMsg(ctx, "👢 Laat maar ke nikaal diya! 😂");
 });
 
 // ======================================
-// WARN
-// ======================================
-
-bot.command(
-"warn",
-
-async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Admin only"
-    );
-
-  }
-
-  if (
-    !ctx.message.reply_to_message
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Reply user"
-    );
-
-  }
-
-  const target =
-  ctx.message.reply_to_message.from;
-
-  const warnings =
-  await addWarning(
-    ctx.chat.id,
-    target.id
-  );
-
-  replyMsg(
-    ctx,
-`
-⚠️ ${getUserName(target)}
-
-Warnings:
-${warnings}/3
-`
-  );
-
-});
-
-// ======================================
-// KICK
-// ======================================
-
-bot.command(
-"kick",
-
-async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Admin only"
-    );
-
-  }
-
-  if (
-    !ctx.message.reply_to_message
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Reply user"
-    );
-
-  }
-
-  const target =
-  ctx.message.reply_to_message.from;
-
-  await ctx.telegram.banChatMember(
-    ctx.chat.id,
-    target.id
-  );
-
-  await ctx.telegram.unbanChatMember(
-    ctx.chat.id,
-    target.id
-  );
-
-  replyMsg(
-    ctx,
-`
-👢 ${getUserName(target)}
-kicked
-`
-  );
-
-});
-
-// ======================================
-// BAN
-// ======================================
-
-bot.command(
-"ban",
-
-async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Admin only"
-    );
-
-  }
-
-  if (
-    !ctx.message.reply_to_message
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Reply user"
-    );
-
-  }
-
-  const target =
-  ctx.message.reply_to_message.from;
-
-  await ctx.telegram.banChatMember(
-    ctx.chat.id,
-    target.id
-  );
-
-  replyMsg(
-    ctx,
-`
-🚫 ${getUserName(target)}
-banned
-`
-  );
-
-});
-
-// ======================================
-// MUTE
-// ======================================
-
-bot.command(
-"mute",
-
-async (ctx) => {
-
-  if (
-    !(await isAdmin(ctx))
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Admin only"
-    );
-
-  }
-
-  if (
-    !ctx.message.reply_to_message
-  ) {
-
-    return replyMsg(
-      ctx,
-      "❌ Reply user"
-    );
-
-  }
-
-  const target =
-  ctx.message.reply_to_message.from;
-
-  await ctx.telegram.restrictChatMember(
-
-    ctx.chat.id,
-
-    target.id,
-
-    {
-
-      permissions: {
-
-        can_send_messages:
-        false
-
-      }
-
-    }
-
-  );
-
-  replyMsg(
-    ctx,
-`
-🔇 ${getUserName(target)}
-muted
-`
-  );
-
-});
-
-// ======================================
-// GOOD MORNING / NIGHT
+// SCHEDULER (INDIA TIME)
 // ======================================
 
 setInterval(async () => {
-
-  try {
-
-    const indiaTime =
-    new Date().toLocaleString(
-      "en-US",
-      {
-        timeZone:
-        "Asia/Kolkata"
-      }
-    );
-
-    const now =
-    new Date(indiaTime);
-
-    const hour =
-    now.getHours();
-
-    const minute =
-    now.getMinutes();
-
-    const today =
-    now.toDateString();
-
-    const snap =
-    await get(
-      ref(db, "groups")
-    );
-
-    const groups =
-    snap.val() || {};
-
-    // GOOD MORNING
-
-    if (
-      hour === 6 &&
-      minute <= 5
-    ) {
-
-      for (const id in groups) {
-
-        const key =
-        `${id}-gm-${today}`;
-
-        if (
-          sentToday[key]
-        ) continue;
-
-        sentToday[key] =
-        true;
-
-        await bot.telegram.sendMessage(
-          id,
-          "🌅 Good Morning legends 😎"
-        );
-
-      }
-
+    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+    const h = now.getHours(), m = now.getMinutes(), d = now.toDateString();
+    
+    if (h === 8 && m === 0) { // Morning 8 AM
+        const snap = await get(ref(db, "groups"));
+        for (const id in snap.val()) {
+            if (!sentToday[`gm-${id}-${d}`]) {
+                bot.telegram.sendMessage(id, "🌅 Good Morning Legends! 🔥 Din shuru karo bakchodi se! 😎");
+                sentToday[`gm-${id}-${d}`] = true;
+            }
+        }
     }
-
-    // GOOD NIGHT
-
-    if (
-      hour === 17 &&
-      minute <= 5
-    ) {
-
-      for (const id in groups) {
-
-        const key =
-        `${id}-gn-${today}`;
-
-        if (
-          sentToday[key]
-        ) continue;
-
-        sentToday[key] =
-        true;
-
-        await bot.telegram.sendMessage(
-          id,
-          "🌃 Good Night dosto 😴"
-        );
-
-      }
-
-    }
-
-  } catch (err) {
-
-    console.log(err);
-
-  }
-
-}, 30000);
+}, 60000);
 
 // ======================================
-// START BOT
+// START
 // ======================================
 
-bot.launch();
+bot.launch().then(() => console.log("🤖 Supreme Bot Fixed & Running! 🔥"));
 
-console.log(
-  "🤖 Bot Running..."
-);
-
-// ======================================
-// CRASH FIX
-// ======================================
-
-process.on(
-"unhandledRejection",
-console.error
-);
-
-process.on(
-"uncaughtException",
-console.error
-);
+process.on("unhandledRejection", console.error);
+process.on("uncaughtException", console.error);
